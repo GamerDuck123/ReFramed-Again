@@ -1,10 +1,13 @@
 package fr.adrien1106.reframed.util;
 
-import net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity;
 import net.minecraft.block.BlockState;
 
-public interface ThemeableBlockEntity extends RenderAttachmentBlockEntity {
-	default BlockState getThemeState() {
-		return (BlockState) getRenderAttachmentData();
-	}
+import java.util.List;
+
+public interface ThemeableBlockEntity {
+	BlockState getTheme(int i);
+
+	void setTheme(BlockState state, int i);
+
+	List<BlockState> getThemes();
 }

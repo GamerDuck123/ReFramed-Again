@@ -1,12 +1,15 @@
 package fr.adrien1106.reframed.client.model;
 
 import fr.adrien1106.reframed.block.ReFramedEntity;
+import fr.adrien1106.reframed.client.ReFramedClient;
 import fr.adrien1106.reframed.client.model.apperance.SpriteProperties;
 import fr.adrien1106.reframed.mixin.MinecraftAccessor;
 import fr.adrien1106.reframed.client.model.apperance.CamoAppearance;
 import fr.adrien1106.reframed.client.model.apperance.CamoAppearanceManager;
 import fr.adrien1106.reframed.client.model.apperance.WeightedComputedAppearance;
+import fr.adrien1106.reframed.util.ThemeableBlockEntity;
 import net.fabricmc.fabric.api.renderer.v1.mesh.Mesh;
+import net.fabricmc.fabric.api.renderer.v1.mesh.MeshBuilder;
 import net.fabricmc.fabric.api.renderer.v1.mesh.MutableQuadView;
 import net.fabricmc.fabric.api.renderer.v1.mesh.QuadEmitter;
 import net.fabricmc.fabric.api.renderer.v1.model.ForwardingBakedModel;
@@ -29,30 +32,44 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Supplier;
 
 public abstract class RetexturingBakedModel extends ForwardingBakedModel {
-	public RetexturingBakedModel(BakedModel baseModel, CamoAppearanceManager tam, ModelBakeSettings settings, BlockState itemModelState, boolean ao) {
-		this.wrapped = baseModel; //field from the superclass; vanilla getQuads etc. will delegate through to this
-		
+	public RetexturingBakedModel(BakedModel base_model, CamoAppearanceManager tam, int theme_index, ModelBakeSettings settings, BlockState item_state, boolean ao) {
+		this.wrapped = base_model; //field from the superclass; vanilla getQuads etc. will delegate through to this
+
 		this.tam = tam;
-		this.uvlock = settings.isUvLocked();
-		this.itemModelState = itemModelState;
+		this.theme_index = theme_index;
+		this.uv_lock = settings.isUvLocked();
+		this.item_state = item_state;
 		this.ao = ao;
 	}
-	
+
 	protected final CamoAppearanceManager tam;
-	protected final boolean uvlock;
-	protected final BlockState itemModelState;
+	protected final int theme_index;
+	protected final boolean uv_lock;
+	protected final BlockState item_state;
 	protected final boolean ao;
-	
+
+	/* ----------------------------------------------- CACHE ELEMENT ------------------------------------------------ */
+	// TODO make static ? for connected textures ?
 	protected record MeshCacheKey(BlockState state, TransformCacheKey transform) {}
-	protected final ConcurrentMap<MeshCacheKey, Mesh> retextured_meshes = new ConcurrentHashMap<>(); //mutable, append-only cache
 	protected record TransformCacheKey(CamoAppearance appearance, int model_id) {}
 	protected final ConcurrentMap<TransformCacheKey, RetexturingTransformer> retextured_transforms = new ConcurrentHashMap<>();
-	
-	protected static final Direction[] DIRECTIONS = Direction.values();
-	protected static final Direction[] DIRECTIONS_AND_NULL = new Direction[DIRECTIONS.length + 1];
-	static { System.arraycopy(DIRECTIONS, 0, DIRECTIONS_AND_NULL, 0, DIRECTIONS.length); }
-	
-	protected abstract Mesh getBaseMesh(BlockState state);
+	protected final ConcurrentMap<MeshCacheKey, Mesh> retextured_meshes = new ConcurrentHashMap<>(); //mutable, append-only cache
+
+	protected static final Direction[] DIRECTIONS_AND_NULL;
+	static {
+		Direction[] values = Direction.values();
+		DIRECTIONS_AND_NULL = new Direction[values.length + 1];
+		System.arraycopy(values, 0, DIRECTIONS_AND_NULL, 0, values.length);
+	}
+
+	protected final ConcurrentMap<BlockState, Mesh> jsonToMesh = new ConcurrentHashMap<>();
+
+	protected Mesh getBaseMesh(BlockState state) {
+		//Convert models to re-texturable Meshes lazily, the first time we encounter each blockstate
+		return jsonToMesh.computeIfAbsent(state, this::convertModel);
+	}
+
+	protected abstract Mesh convertModel(BlockState state);
 	
 	@Override
 	public boolean isVanillaAdapter() {
@@ -61,20 +78,20 @@ public abstract class RetexturingBakedModel extends ForwardingBakedModel {
 	
 	@Override
 	public Sprite getParticleSprite() {
-		return tam.getDefaultAppearance().getSprites(Direction.UP, 0).get(0).sprite();
+		return tam.getDefaultAppearance(theme_index).getSprites(Direction.UP, 0).get(0).sprite();
 	}
 	
 	@Override
 	public void emitBlockQuads(BlockRenderView world, BlockState state, BlockPos pos, Supplier<Random> randomSupplier, RenderContext context) {
-		BlockState theme = (world.getBlockEntityRenderData(pos) instanceof BlockState s) ? s : null;
+		BlockState theme = (world.getBlockEntity(pos) instanceof ThemeableBlockEntity s) ? s.getTheme(theme_index) : null;
 		QuadEmitter quad_emitter = context.getEmitter();
 		if(theme == null || theme.isAir()) {
-			getUntintedRetexturedMesh(new MeshCacheKey(state, new TransformCacheKey(tam.getDefaultAppearance(), 0)), 0).outputTo(quad_emitter);
+			getUntintedRetexturedMesh(new MeshCacheKey(state, new TransformCacheKey(tam.getDefaultAppearance(theme_index), 0)), 0).outputTo(quad_emitter);
 			return;
 		}
 		if(theme.getBlock() == Blocks.BARRIER) return;
 		
-		CamoAppearance camo = tam.getCamoAppearance(world, theme, pos);
+		CamoAppearance camo = tam.getCamoAppearance(world, theme, pos, theme_index);
 		long seed = theme.getRenderingSeed(pos);
 		int model_id = 0;
 		if (camo instanceof WeightedComputedAppearance wca) model_id = wca.getAppearanceIndex(seed);
@@ -105,16 +122,16 @@ public abstract class RetexturingBakedModel extends ForwardingBakedModel {
 		//none of this is accessible unless you're in creative mode doing ctrl-pick btw
 		CamoAppearance nbtAppearance;
 		int tint;
-		BlockState theme = ReFramedEntity.readStateFromItem(stack);
+		BlockState theme = ReFramedEntity.readStateFromItem(stack, theme_index);
 		if(!theme.isAir()) {
-			nbtAppearance = tam.getCamoAppearance(null, theme, null);
+			nbtAppearance = tam.getCamoAppearance(null, theme, null, theme_index);
 			tint = 0xFF000000 | ((MinecraftAccessor) MinecraftClient.getInstance()).getItemColors().getColor(new ItemStack(theme.getBlock()), 0);
 		} else {
-			nbtAppearance = tam.getDefaultAppearance();
+			nbtAppearance = tam.getDefaultAppearance(theme_index);
 			tint = 0xFFFFFFFF;
 		}
 		
-		Mesh untintedMesh = getUntintedRetexturedMesh(new MeshCacheKey(itemModelState, new TransformCacheKey(nbtAppearance, 0)), 0);
+		Mesh untintedMesh = getUntintedRetexturedMesh(new MeshCacheKey(item_state, new TransformCacheKey(nbtAppearance, 0)), 0);
 
 		QuadEmitter quad_emitter = context.getEmitter();
 		if(tint == 0xFFFFFFFF) {
@@ -132,7 +149,22 @@ public abstract class RetexturingBakedModel extends ForwardingBakedModel {
 	
 	protected Mesh createUntintedRetexturedMesh(MeshCacheKey key, long seed) {
 		RetexturingTransformer transformer = retextured_transforms.computeIfAbsent(key.transform, (k) -> new RetexturingTransformer(k.appearance, seed));
-		return MeshTransformUtil.pretransformMesh(getBaseMesh(key.state), transformer);
+		return pretransformMesh(getBaseMesh(key.state), transformer);
+	}
+
+	private static Mesh pretransformMesh(Mesh mesh, RetexturingTransformer transform) {
+		MeshBuilder builder = ReFramedClient.HELPER.getFabricRenderer().meshBuilder();
+		QuadEmitter emitter = builder.getEmitter();
+
+		mesh.forEach(quad -> {
+			int i = -1;
+			do {
+				emitter.copyFrom(quad);
+				i = transform.transform(emitter, i);
+			} while (i > 0);
+		});
+
+		return builder.build();
 	}
 	
 	public class RetexturingTransformer {
@@ -161,7 +193,7 @@ public abstract class RetexturingBakedModel extends ForwardingBakedModel {
 					properties.sprite(),
 					MutableQuadView.BAKE_NORMALIZED
 						| properties.flags()
-						| (uvlock ? MutableQuadView.BAKE_LOCK_UV : 0)
+						| (uv_lock ? MutableQuadView.BAKE_LOCK_UV : 0)
 				);
 				quad.tag(i+1);
 				quad.emit();
@@ -175,7 +207,7 @@ public abstract class RetexturingBakedModel extends ForwardingBakedModel {
 			// apply new quad shape
 			quad.material(ta.getRenderMaterial(ao));
 			bounds.intersection(origin_bounds, direction.getAxis()).apply(quad, origin_bounds);
-			quad.spriteBake( // TODO check if the flags are usefull because it seems to be braking the functioning of it
+			quad.spriteBake( // seems to work without the flags and break with it
 				properties.sprite(),
 				MutableQuadView.BAKE_NORMALIZED
 					| MutableQuadView.BAKE_LOCK_UV

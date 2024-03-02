@@ -1,8 +1,11 @@
 package fr.adrien1106.reframed.client;
 
-import fr.adrien1106.reframed.client.model.apperance.CamoAppearanceManager;
+import fr.adrien1106.reframed.ReFramed;
 import fr.adrien1106.reframed.client.model.UnbakedAutoRetexturedModel;
+import fr.adrien1106.reframed.client.model.UnbakedDoubleRetexturedModel;
 import fr.adrien1106.reframed.client.model.UnbakedJsonRetexturedModel;
+import fr.adrien1106.reframed.client.model.UnbakedRetexturedModel;
+import fr.adrien1106.reframed.client.model.apperance.CamoAppearanceManager;
 import net.fabricmc.fabric.api.renderer.v1.Renderer;
 import net.fabricmc.fabric.api.renderer.v1.RendererAccess;
 import net.fabricmc.loader.api.FabricLoader;
@@ -23,20 +26,25 @@ public class ReFramedClientHelper {
 
 	private final ReFramedModelProvider prov;
 
-	public UnbakedModel auto(Identifier parent) {
+
+	public UnbakedRetexturedModel auto(Identifier parent) {
 		return new UnbakedAutoRetexturedModel(parent);
 	}
 
-	public UnbakedModel json(Identifier parent) {
+	public UnbakedRetexturedModel json(Identifier parent) {
 		return new UnbakedJsonRetexturedModel(parent);
 	}
 
-	public void addReFramedModel(Identifier id, UnbakedModel unbaked) {
-		prov.addReFramedModel(id, unbaked);
+	public UnbakedModel autoDouble(Identifier first, Identifier second) {
+		return new UnbakedDoubleRetexturedModel(auto(first), auto(second));
 	}
 
-	public void assignItemModel(Identifier model_id, ItemConvertible... item_convertibles) {
-		prov.assignItemModel(model_id, item_convertibles);
+	public void addReFramedModel(String id, UnbakedModel unbaked) {
+		prov.addReFramedModel(ReFramed.id(id), unbaked);
+	}
+
+	public void assignItemModel(String id, ItemConvertible... item_convertibles) {
+		prov.assignItemModel(ReFramed.id(id), item_convertibles);
 	}
 
 	public CamoAppearanceManager getCamoApperanceManager(Function<SpriteIdentifier, Sprite> spriteLookup) {

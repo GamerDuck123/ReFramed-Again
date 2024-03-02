@@ -25,15 +25,16 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 /**
- * TODO multiple camos
+ * TODO self culling, fix other models, better connected textures
  */
 public class ReFramed implements ModInitializer {
 	public static final String MODID = "reframed";
 
 	public static final ArrayList<Block> BLOCKS = new ArrayList<>();
-	public static Block CUBE, STAIRS, SLAB, POST, FENCE, FENCE_GATE, DOOR, TRAPDOOR, IRON_DOOR, IRON_TRAPDOOR, PRESSURE_PLATE, BUTTON, LEVER, WALL, CARPET, PANE, CANDLE;
+	public static Block CUBE, STAIRS, DOUBLE_STAIRS, SLAB, DOUBLE_SLAB, POST, FENCE, FENCE_GATE, DOOR, TRAPDOOR, IRON_DOOR, IRON_TRAPDOOR, PRESSURE_PLATE, BUTTON, LEVER, WALL, CARPET, PANE, CANDLE;
 
 	public static BlockEntityType<ReFramedEntity> REFRAMED_BLOCK_ENTITY;
+	public static BlockEntityType<ReFramedDoubleEntity> REFRAMED_DOUBLE_BLOCK_ENTITY;
 
 	public static BiConsumer<World, BlockPos> chunkRerenderProxy = (world, pos) -> {};
 	
@@ -46,7 +47,9 @@ public class ReFramed implements ModInitializer {
 		//and button, because they're redstoney... hopefully this ordering makes sense lol
 		CUBE           = registerReFramed("cube"          , new ReFramedBlock(ReFramedInteractionUtil.makeSettings()));
 		STAIRS         = registerReFramed("stairs"        , new ReFramedStairsBlock(cp(Blocks.OAK_STAIRS)));
+		DOUBLE_STAIRS  = registerReFramed("double_stairs" , new ReFramedDoubleStairsBlock(cp(Blocks.OAK_STAIRS)));
 		SLAB           = registerReFramed("slab"          , new ReFramedSlabBlock(cp(Blocks.OAK_SLAB)));
+		DOUBLE_SLAB    = registerReFramed("double_slab"   , new ReFramedDoubleSlabBlock(cp(Blocks.OAK_SLAB)));
 		POST           = registerReFramed("post"          , new ReFramedPostBlock(cp(Blocks.OAK_FENCE)));
 		FENCE          = registerReFramed("fence"         , new ReFramedFenceBlock(cp(Blocks.OAK_FENCE)));
 		FENCE_GATE     = registerReFramed("fence_gate"    , new ReFramedFenceGateBlock(cp(Blocks.OAK_FENCE_GATE)));
@@ -63,7 +66,19 @@ public class ReFramed implements ModInitializer {
 		CANDLE         = registerReFramed("candle"        , new ReFramedCandleBlock(ReFramedCandleBlock.configureSettings(cp(Blocks.CANDLE))));
 
 		REFRAMED_BLOCK_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, id("camo"),
-			FabricBlockEntityTypeBuilder.create((pos, state) -> new ReFramedEntity(REFRAMED_BLOCK_ENTITY, pos, state), BLOCKS.toArray(new Block[0])).build(null)
+			FabricBlockEntityTypeBuilder.create(
+				(pos, state) -> new ReFramedEntity(REFRAMED_BLOCK_ENTITY, pos, state),
+				BLOCKS.stream()
+					.filter(block -> !(block instanceof ReFramedDoubleBlock))
+					.toArray(Block[]::new)).build(null)
+		);
+
+		REFRAMED_DOUBLE_BLOCK_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, id("double_camo"),
+			FabricBlockEntityTypeBuilder.create(
+				(pos, state) -> new ReFramedDoubleEntity(REFRAMED_DOUBLE_BLOCK_ENTITY, pos, state),
+				BLOCKS.stream()
+					.filter(block -> block instanceof ReFramedDoubleBlock)
+					.toArray(Block[]::new)).build(null)
 		);
 		
 		Registry.register(Registries.ITEM_GROUP, id("tab"), FabricItemGroup.builder()

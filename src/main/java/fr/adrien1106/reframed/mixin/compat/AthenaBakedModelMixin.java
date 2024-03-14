@@ -6,7 +6,7 @@ import earth.terrarium.athena.api.client.models.AthenaBlockModel;
 import fr.adrien1106.reframed.client.ReFramedClient;
 import fr.adrien1106.reframed.client.model.DynamicBakedModel;
 import fr.adrien1106.reframed.compat.RebakedAthenaModel;
-import fr.adrien1106.reframed.util.ThemeableBlockEntity;
+import fr.adrien1106.reframed.util.blocks.ThemeableBlockEntity;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.fabricmc.fabric.api.renderer.v1.Renderer;
 import net.fabricmc.fabric.api.renderer.v1.mesh.MutableQuadView;
@@ -56,8 +56,7 @@ public abstract class AthenaBakedModelMixin implements DynamicBakedModel, BakedM
                     level.getBlockEntity(pos) instanceof ThemeableBlockEntity framed_entity
                         ? framed_entity.getTheme(theme_index)
                         : state, pos, direction)
-                )
-                .forEach(sprite -> face_quads.computeIfPresent(direction, (d, quads) -> {
+                ).forEach(sprite -> face_quads.computeIfPresent(direction, (d, quads) -> {
                     Sprite texture = textures.get(sprite.sprite());
                     if (texture == null) return quads;
                     emitter.square(direction, sprite.left(), sprite.bottom(), sprite.right(), sprite.top(), sprite.depth());

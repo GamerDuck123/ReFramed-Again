@@ -1,8 +1,10 @@
 package fr.adrien1106.reframed.mixin.render;
 
 import fr.adrien1106.reframed.client.model.MultiRetexturableModel;
-import fr.adrien1106.reframed.util.IBlockRenderInfoMixin;
-import fr.adrien1106.reframed.util.IMultipartBakedModelMixin;
+import fr.adrien1106.reframed.util.blocks.BlockHelper;
+import fr.adrien1106.reframed.util.mixin.IBlockRenderInfoMixin;
+import fr.adrien1106.reframed.util.mixin.IMultipartBakedModelMixin;
+import net.fabricmc.fabric.api.renderer.v1.model.ForwardingBakedModel;
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractBlockRenderContext;
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.TerrainRenderContext;
 import net.minecraft.block.BlockState;
@@ -28,13 +30,14 @@ public abstract class TerrainRenderContextMixin extends AbstractBlockRenderConte
         if (!(wrapper instanceof IMultipartBakedModelMixin wrapped)
             || !(wrapped.getModel(state) instanceof MultiRetexturableModel retexturing_model)) return;
 
-        List<BakedModel> models = retexturing_model.models();
+        List<ForwardingBakedModel> models = retexturing_model.models();
+        BlockHelper.computeInnerCull(state, models);
         int i = 0;
-        for (BakedModel bakedModel : models) {
+        for (BakedModel model : models) {
             i++;
             aoCalc.clear();
-            ((IBlockRenderInfoMixin) blockInfo).prepareForBlock(state, pos, bakedModel.useAmbientOcclusion(), i);
-            bakedModel.emitBlockQuads(blockInfo.blockView, blockInfo.blockState, blockInfo.blockPos, blockInfo.randomSupplier, this);
+            ((IBlockRenderInfoMixin) blockInfo).prepareForBlock(state, pos, model.useAmbientOcclusion(), i);
+            model.emitBlockQuads(blockInfo.blockView, blockInfo.blockState, blockInfo.blockPos, blockInfo.randomSupplier, this);
         }
         ci.cancel();
     }

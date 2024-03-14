@@ -11,9 +11,7 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtHelper;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -22,8 +20,6 @@ import static fr.adrien1106.reframed.block.ReFramedEntity.BLOCKSTATE_KEY;
 
 @Mixin(BlockItem.class)
 public class BlockItemMixin {
-
-    @Shadow @Final @Deprecated private Block block;
 
     @Inject(
         method = "writeNbtToBlockEntity",
@@ -41,6 +37,7 @@ public class BlockItemMixin {
             || !Block.isShapeFullCube(block.getBlock().getDefaultState().getCollisionShape(world, pos))
         ) return;
         NbtCompound new_comp = new NbtCompound();
+        player.getOffHandStack().decrement(1);
         new_comp.put(BLOCKSTATE_KEY + 1, NbtHelper.fromBlockState(block.getBlock().getDefaultState()));
         compound.set(new_comp);
     }

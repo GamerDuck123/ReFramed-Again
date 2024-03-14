@@ -1,4 +1,4 @@
-package fr.adrien1106.reframed.util;
+package fr.adrien1106.reframed.util.mixin;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.util.math.BlockPos;
@@ -8,4 +8,6 @@ public interface IBlockRenderInfoMixin {
     void prepareForBlock(BlockState state, BlockPos pos, boolean ao, int theme_index);
 
     void prepareForBlock(BlockState state, BlockPos pos, long seed, boolean ao, int theme_index);
+
+    int getThemeIndex();
 }

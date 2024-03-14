@@ -1,9 +1,9 @@
 package fr.adrien1106.reframed.mixin.render;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import fr.adrien1106.reframed.util.BlockHelper;
-import fr.adrien1106.reframed.util.IBlockRenderInfoMixin;
-import fr.adrien1106.reframed.util.ThemeableBlockEntity;
+import fr.adrien1106.reframed.util.blocks.BlockHelper;
+import fr.adrien1106.reframed.util.mixin.IBlockRenderInfoMixin;
+import fr.adrien1106.reframed.util.blocks.ThemeableBlockEntity;
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.BlockRenderInfo;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
@@ -24,8 +24,7 @@ public abstract class BlockRenderInfoMixin implements IBlockRenderInfoMixin {
     @Shadow public abstract void prepareForBlock(BlockState blockState, BlockPos blockPos, boolean modelAo);
 
     @Shadow public BlockRenderView blockView;
-    @Unique
-    private int theme_index = 1;
+    @Unique private int theme_index = 0;
 
     @ModifyArg(method = "prepareForBlock",
         at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/RenderLayers;" +
@@ -46,5 +45,10 @@ public abstract class BlockRenderInfoMixin implements IBlockRenderInfoMixin {
     public void prepareForBlock(BlockState state, BlockPos pos, boolean ao, int theme_index) {
         this.theme_index = theme_index;
         prepareForBlock(state, pos, ao);
+    }
+
+    @Override
+    public int getThemeIndex() {
+        return theme_index;
     }
 }

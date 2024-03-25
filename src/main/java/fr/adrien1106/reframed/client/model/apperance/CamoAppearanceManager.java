@@ -6,6 +6,7 @@ import fr.adrien1106.reframed.ReFramed;
 import fr.adrien1106.reframed.client.ReFramedClient;
 import fr.adrien1106.reframed.client.model.DynamicBakedModel;
 import fr.adrien1106.reframed.client.model.QuadPosBounds;
+import fr.adrien1106.reframed.compat.RebakedModel;
 import fr.adrien1106.reframed.mixin.model.WeightedBakedModelAccessor;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -39,6 +40,12 @@ import java.util.function.Function;
 @Environment(EnvType.CLIENT)
 public class CamoAppearanceManager {
 
+
+	protected static final SpriteIdentifier DEFAULT_SPRITE_MAIN = new SpriteIdentifier(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE, new Identifier(ReFramed.MODID, "block/framed_block"));
+	protected static final SpriteIdentifier DEFAULT_SPRITE_SECONDARY = new SpriteIdentifier(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE, new Identifier(ReFramed.MODID, "block/framed_accent_block"));
+	private static final SpriteIdentifier BARRIER_SPRITE_ID = new SpriteIdentifier(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE, new Identifier("minecraft:item/barrier"));
+	private static final Cache<BlockState, CamoAppearance> APPEARANCE_CACHE = CacheBuilder.newBuilder().maximumSize(2048).build();
+
 	public CamoAppearanceManager(Function<SpriteIdentifier, Sprite> spriteLookup) {
 		MaterialFinder finder = ReFramedClient.HELPER.getFabricRenderer().materialFinder();
 		for(BlendMode blend : BlendMode.values()) {
@@ -59,22 +66,20 @@ public class CamoAppearanceManager {
 		sprite = spriteLookup.apply(BARRIER_SPRITE_ID);
 		this.barrierItemAppearance = new SingleSpriteAppearance(sprite, materials.get(BlendMode.CUTOUT), serial_number.getAndIncrement());
 	}
-
-	protected static final SpriteIdentifier DEFAULT_SPRITE_MAIN = new SpriteIdentifier(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE, new Identifier(ReFramed.MODID, "block/framed_block"));
-	protected static final SpriteIdentifier DEFAULT_SPRITE_SECONDARY = new SpriteIdentifier(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE, new Identifier(ReFramed.MODID, "block/framed_accent_block"));
-	private static final SpriteIdentifier BARRIER_SPRITE_ID = new SpriteIdentifier(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE, new Identifier("minecraft:item/barrier"));
 	
 	private final CamoAppearance default_appearance;
 	private final CamoAppearance accent_appearance;
 	private final CamoAppearance barrierItemAppearance;
 
-	private static final Cache<BlockState, CamoAppearance> APPEARANCE_CACHE = CacheBuilder.newBuilder().maximumSize(2048).build();
-
 	private final AtomicInteger serial_number = new AtomicInteger(0); //Mutable
 	
 	private final EnumMap<BlendMode, RenderMaterial> ao_materials = new EnumMap<>(BlendMode.class);
 	private final EnumMap<BlendMode, RenderMaterial> materials = new EnumMap<>(BlendMode.class); //Immutable contents
-	
+
+	public static void dumpCahe() {
+		APPEARANCE_CACHE.invalidateAll();
+	}
+
 	public CamoAppearance getDefaultAppearance(int appearance) {
 		return appearance == 2 ? accent_appearance: default_appearance;
 	}
@@ -82,14 +87,18 @@ public class CamoAppearanceManager {
 	public CamoAppearance getCamoAppearance(BlockRenderView world, BlockState state, BlockPos pos, int theme_index, boolean item) {
 		BakedModel model = MinecraftClient.getInstance().getBlockRenderManager().getModel(state);
 
-		// add support for connected textures and more generally any compatible models injected so that they return baked quads
+		// add support for connected textures that uses dynamic baking
 		if (model instanceof DynamicBakedModel dynamic_model) {
 			// cache items as they get rendered more often
 			if (item && APPEARANCE_CACHE.asMap().containsKey(state)) return APPEARANCE_CACHE.getIfPresent(state);
 
-			CamoAppearance appearance = computeAppearance(dynamic_model.computeQuads(world, state, pos, theme_index), state);
-			if (item) APPEARANCE_CACHE.put(state, appearance);
-			return appearance;
+			model = dynamic_model.computeQuads(world, state, pos, theme_index);
+			// if model isn't rebaked its just wrapped (i.e. not dynamic and may be cached)
+			if (model instanceof RebakedModel) {
+				CamoAppearance appearance = computeAppearance(model, state);
+				if (item) APPEARANCE_CACHE.put(state, appearance);
+				return appearance;
+			}
 		}
 
 		// refresh cache

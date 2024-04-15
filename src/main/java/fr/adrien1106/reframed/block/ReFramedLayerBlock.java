@@ -1,15 +1,12 @@
 package fr.adrien1106.reframed.block;
 
-import fr.adrien1106.reframed.ReFramed;
-import fr.adrien1106.reframed.generator.GBlockstate;
 import fr.adrien1106.reframed.util.VoxelHelper;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.ShapeContext;
-import net.minecraft.data.client.MultipartBlockStateSupplier;
+import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.state.StateManager;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.shape.VoxelShape;
@@ -17,7 +14,6 @@ import net.minecraft.world.BlockView;
 import org.jetbrains.annotations.Nullable;
 
 import static fr.adrien1106.reframed.util.VoxelHelper.VoxelListBuilder;
-import static net.minecraft.data.client.VariantSettings.Rotation.*;
 import static net.minecraft.state.property.Properties.FACING;
 import static net.minecraft.state.property.Properties.LAYERS;
 
@@ -52,8 +48,12 @@ public class ReFramedLayerBlock extends ReFramedSlabBlock {
     }
 
     @Override
-    public boolean canReplace(BlockState state, ItemPlacementContext ctx) {
-        return !(!state.isOf(this) || ctx.getPlayer().isSneaking() || state.get(LAYERS) == 8);
+    public boolean canReplace(BlockState state, ItemPlacementContext context) {
+        return !(
+            context.getPlayer().isSneaking()
+            || !(context.getStack().getItem() instanceof BlockItem block_item)
+            || !(block_item.getBlock() == this && state.get(LAYERS) < 8)
+        );
     }
 
     @Override
@@ -61,29 +61,6 @@ public class ReFramedLayerBlock extends ReFramedSlabBlock {
         BlockState previous = ctx.getWorld().getBlockState(ctx.getBlockPos());
         if (!previous.isOf(this)) return super.getPlacementState(ctx);
         return previous.with(LAYERS, previous.get(LAYERS) + 1);
-    }
-
-    @Override
-    public MultipartBlockStateSupplier getMultipart() {
-        String model_pattern = "layer_x_special";
-        MultipartBlockStateSupplier supplier = MultipartBlockStateSupplier.create(this);
-        for (int i = 1; i <= 8; i++) {
-            Identifier model = ReFramed.id(model_pattern.replace("x", i + ""));
-            supplier
-                .with(GBlockstate.when(FACING, Direction.DOWN, LAYERS, i),
-                    GBlockstate.variant(model, true, R0, R0))
-                .with(GBlockstate.when(FACING, Direction.SOUTH, LAYERS, i),
-                    GBlockstate.variant(model, true, R90, R0))
-                .with(GBlockstate.when(FACING, Direction.UP, LAYERS, i),
-                    GBlockstate.variant(model, true, R180, R0))
-                .with(GBlockstate.when(FACING, Direction.NORTH, LAYERS, i),
-                    GBlockstate.variant(model, true, R270, R0))
-                .with(GBlockstate.when(FACING, Direction.WEST, LAYERS, i),
-                    GBlockstate.variant(model, true, R90, R90))
-                .with(GBlockstate.when(FACING, Direction.EAST, LAYERS, i),
-                    GBlockstate.variant(model, true, R90, R270));
-        }
-        return supplier;
     }
 
     static {

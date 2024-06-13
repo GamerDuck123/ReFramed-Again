@@ -113,7 +113,7 @@ public class ReFramedDoorBlock extends WaterloggableReFramedBlock {
 
     @Override
     public BlockState onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
-        if (!world.isClient() && (player.isCreative() || !player.canHarvest(state))) {
+        if (!world.isClient() && (player.isCreative() || player.canHarvest(state))) {
             DoubleBlockHalf half = state.get(DOUBLE_BLOCK_HALF);
             BlockPos other_pos = half == DoubleBlockHalf.LOWER ? pos.up() : pos.down();
             BlockState other_state = world.getBlockState(other_pos);
@@ -127,10 +127,10 @@ public class ReFramedDoorBlock extends WaterloggableReFramedBlock {
     }
 
     @Override
-    public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
-        super.onStateReplaced(state, world, pos, newState, moved);
+    public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState new_state, boolean moved) {
+        super.onStateReplaced(state, world, pos, new_state, moved);
 
-        if(!state.isOf(newState.getBlock())) world.removeBlockEntity(pos);
+        if(!state.isOf(new_state.getBlock())) world.removeBlockEntity(pos);
     }
 
     @Override

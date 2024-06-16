@@ -28,10 +28,10 @@ import java.util.stream.Stream;
 import static fr.adrien1106.reframed.util.blocks.BlockProperties.LIGHT;
 
 /**
- * TODO Dynamic Ambient Occlusion                                            -> for v1.6
- * TODO add minecraft models like wall fence etc                             -> for v1.6
- * TODO better connected textures                                            -> maybe v1.6 ?
+ * TODO Dynamic Ambient Occlusion                                            -> not scheduled
+ * TODO better connected textures                                            -> not scheduled
  * TODO support continuity overlays                                          -> not scheduled
+ * TODO slopes                                                               -> thinking about it
  */
 public class ReFramed implements ModInitializer {
 	public static final String MODID = "reframed";
@@ -42,7 +42,7 @@ public class ReFramed implements ModInitializer {
         SMALL_CUBE, SMALL_CUBES_STEP,
         STAIR, STAIRS_CUBE,
         HALF_STAIR, HALF_STAIRS_SLAB, HALF_STAIRS_STAIR,
-        SLAB, SLABS_CUBE,
+        SLAB, SLABS_CUBE, SLABS_STAIR,
         STEP, STEPS_SLAB,
         LAYER,
         PILLAR, PILLARS_WALL, WALL,
@@ -73,6 +73,7 @@ public class ReFramed implements ModInitializer {
 		LAYER             = registerBlock("layer"             , new ReFramedLayerBlock(cp(Blocks.OAK_SLAB)));
 		SLAB              = registerBlock("slab"              , new ReFramedSlabBlock(cp(Blocks.OAK_SLAB)));
 		SLABS_CUBE        = registerBlock("slabs_cube"        , new ReFramedSlabsCubeBlock(cp(Blocks.OAK_SLAB)));
+        SLABS_STAIR       = registerBlock("slabs_stair"       , new ReFramedSlabsStairBlock(cp(Blocks.OAK_STAIRS)));
 		STEP              = registerBlock("step"              , new ReFramedStepBlock(cp(Blocks.OAK_SLAB)));
 		STEPS_SLAB        = registerBlock("steps_slab"        , new ReFramedStepsSlabBlock(cp(Blocks.OAK_SLAB)));
 		PILLAR            = registerBlock("pillar"            , new ReFramedPillarBlock(cp(Blocks.OAK_FENCE)));

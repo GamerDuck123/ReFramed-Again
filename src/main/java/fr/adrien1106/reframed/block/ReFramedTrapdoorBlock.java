@@ -48,6 +48,7 @@ public class ReFramedTrapdoorBlock extends WaterloggableReFramedBlock {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void neighborUpdate(BlockState state, World world, BlockPos pos, Block source, BlockPos sourcePos, boolean notify) {
         if (world.isClient) return;
         boolean powered = world.isReceivingRedstonePower(pos);
@@ -84,13 +85,6 @@ public class ReFramedTrapdoorBlock extends WaterloggableReFramedBlock {
     }
 
     @Override
-    public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState new_state, boolean moved) {
-        super.onStateReplaced(state, world, pos, new_state, moved);
-
-        if(!state.isOf(new_state.getBlock())) world.removeBlockEntity(pos);
-    }
-
-    @Override
     public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
         ActionResult result = super.onUse(state, world, pos, player, hand, hit);
         if (result.isAccepted()) return result;
@@ -99,6 +93,7 @@ public class ReFramedTrapdoorBlock extends WaterloggableReFramedBlock {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public boolean canPathfindThrough(BlockState state, BlockView world, BlockPos pos, NavigationType type) {
         return switch (type) {
             case LAND, AIR -> state.get(OPEN);
@@ -107,6 +102,7 @@ public class ReFramedTrapdoorBlock extends WaterloggableReFramedBlock {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void onExploded(BlockState state, World world, BlockPos pos, Explosion explosion, BiConsumer<ItemStack, BlockPos> stack_merger) {
         if (explosion.getDestructionType() == Explosion.DestructionType.TRIGGER_BLOCK
                 && !world.isClient()
@@ -129,6 +125,7 @@ public class ReFramedTrapdoorBlock extends WaterloggableReFramedBlock {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
         int index;
         if (!state.get(OPEN)) index = state.get(BLOCK_HALF) == BlockHalf.BOTTOM ? 0 : 1;
@@ -137,11 +134,13 @@ public class ReFramedTrapdoorBlock extends WaterloggableReFramedBlock {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public BlockState rotate(BlockState state, BlockRotation rotation) {
         return state.with(HORIZONTAL_FACING, rotation.rotate(state.get(HORIZONTAL_FACING)));
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public BlockState mirror(BlockState state, BlockMirror mirror) {
         return state.with(HORIZONTAL_FACING, mirror.apply(state.get(HORIZONTAL_FACING)));
     }

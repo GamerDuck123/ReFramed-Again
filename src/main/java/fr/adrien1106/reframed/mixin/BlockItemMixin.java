@@ -32,7 +32,8 @@ public class BlockItemMixin {
         )
     )
     private static void placeBlockWithOffHandCamo(World world, PlayerEntity player, BlockPos pos, ItemStack stack, CallbackInfoReturnable<Boolean> cir, @Local LocalRef<NbtCompound> compound) {
-        if (compound.get() != null
+        if (player == null
+            || compound.get() != null
             || player.getOffHandStack().isEmpty()
             || player.getMainHandStack().isEmpty()
             || !(player.getMainHandStack().getItem() instanceof BlockItem frame)

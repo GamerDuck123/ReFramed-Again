@@ -138,8 +138,8 @@ public class ReFramed implements ModInitializer {
 			.sounds(BlockSoundGroup.WOOD)
 			.hardness(0.2f)
 			.suffocates(Blocks::never)
-			.solidBlock(Blocks::always)
-			.blockVision(Blocks::always);
+			.solidBlock(Blocks::always);
+//			.blockVision(Blocks::always);
 	}
 
 	private static <I extends Item> I registerItem(String path, I item) {

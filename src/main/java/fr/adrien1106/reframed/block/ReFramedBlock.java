@@ -2,9 +2,11 @@ package fr.adrien1106.reframed.block;
 
 import fr.adrien1106.reframed.ReFramed;
 import fr.adrien1106.reframed.util.blocks.BlockHelper;
+import fr.adrien1106.reframed.util.blocks.ThemeableBlockEntity;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.ai.pathing.NavigationType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemPlacementContext;
@@ -17,6 +19,7 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.collection.DefaultedList;
+import net.minecraft.util.function.BooleanBiFunction;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -31,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static fr.adrien1106.reframed.block.ReFramedEntity.BLOCKSTATE_KEY;
@@ -39,8 +43,24 @@ import static fr.adrien1106.reframed.util.blocks.BlockProperties.LIGHT;
 public class ReFramedBlock extends Block implements BlockEntityProvider {
 
 	public ReFramedBlock(Settings settings) {
-		super(settings);
+		super(settings.dynamicBounds());
 		setDefaultState(getDefaultState().with(LIGHT, false));
+	}
+
+	@Override
+	@SuppressWarnings("deprecation")
+	public int getOpacity(BlockState state, BlockView world, BlockPos pos) {
+		if (state.get(LIGHT)) return 0;
+		if (!(world.getBlockEntity(pos) instanceof ReFramedEntity frame_entity)
+			|| frame_entity.getTheme(0).isOpaque())
+			return world.getMaxLightLevel();
+		return 0;
+	}
+
+	@Override
+	@SuppressWarnings("deprecation")
+	public boolean canPathfindThrough(BlockState state, BlockView world, BlockPos pos, NavigationType type) {
+		return false;
 	}
 
 	@Override
@@ -207,5 +227,18 @@ public class ReFramedBlock extends Block implements BlockEntityProvider {
 	 */
 	public Map<Integer, Integer> getThemeMap(BlockState state, BlockState new_state) {
 		return Map.of();
+	}
+
+	public VoxelShape getShadingShape(BlockState state, BlockView world, BlockPos pos) {
+		if (!(world.getBlockEntity(pos) instanceof ThemeableBlockEntity framed_entity)) return this.getCollisionShape(state, world, pos, ShapeContext.absent());
+
+		AtomicInteger i = new AtomicInteger(1);
+		return framed_entity.getThemes().stream().map((theme) -> {
+			int index = i.getAndIncrement();
+			return theme.isTransparent(world, pos) ? VoxelShapes.empty() : this.getShape(state, index);
+		}).reduce(
+			VoxelShapes.empty(),
+			(prev, current) -> VoxelShapes.combine(prev, current, BooleanBiFunction.OR)
+		);
 	}
 }

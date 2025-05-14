@@ -23,7 +23,13 @@ public class WaterloggableReFramedBlock extends ReFramedBlock implements Waterlo
 	protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
 		super.appendProperties(builder.add(Properties.WATERLOGGED));
 	}
-	
+
+	@Override
+	@SuppressWarnings("deprecation")
+	public boolean hasSidedTransparency(BlockState state) {
+		return true;
+	}
+
 	@Nullable
 	@Override
 	public BlockState getPlacementState(ItemPlacementContext ctx) {

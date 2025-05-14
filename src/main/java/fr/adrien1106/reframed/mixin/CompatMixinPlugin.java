@@ -31,6 +31,8 @@ public class CompatMixinPlugin implements IMixinConfigPlugin {
         CONDITIONS.put("fr.adrien1106.reframed.mixin.compat.IndiumNonTerrainBlockRenderContextMixin", () -> LOADER.isModLoaded(COMPAT_MOD.get(1)));
         CONDITIONS.put("fr.adrien1106.reframed.mixin.render.BlockRenderContextMixin", () -> !LOADER.isModLoaded(COMPAT_MOD.get(1)));
         CONDITIONS.put("fr.adrien1106.reframed.mixin.compat.SodiumBlockOcclusionCacheMixin", () -> LOADER.isModLoaded(COMPAT_MOD.get(2)));
+        CONDITIONS.put("fr.adrien1106.reframed.mixin.render.FluidRendererMixin", () -> !LOADER.isModLoaded(COMPAT_MOD.get(2)));
+        CONDITIONS.put("fr.adrien1106.reframed.mixin.compat.SodiumFluidRendererMixin", () -> LOADER.isModLoaded(COMPAT_MOD.get(2)));
         CONDITIONS.put("fr.adrien1106.reframed.mixin.compat.ContinuityConnectionPredicateMixin", () -> LOADER.isModLoaded(COMPAT_MOD.get(4)));
         CONDITIONS.put("fr.adrien1106.reframed.mixin.compat.ContinuityCTMBakedModelMixin", () -> LOADER.isModLoaded(COMPAT_MOD.get(4)));
         CONDITIONS.put("fr.adrien1106.reframed.mixin.compat.ContinuityCTMQuadTransformMixin", () -> LOADER.isModLoaded(COMPAT_MOD.get(4)));

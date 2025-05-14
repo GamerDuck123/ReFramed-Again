@@ -51,7 +51,7 @@ public class CamoAppearanceManager {
 		for(BlendMode blend : BlendMode.values()) {
 			finder.clear().disableDiffuse(false).blendMode(blend);
 			
-			materials.put(blend, finder.ambientOcclusion(TriState.FALSE).find());
+			materials.put(blend, finder.ambientOcclusion(TriState.TRUE).find());
 			ao_materials.put(blend, finder.ambientOcclusion(TriState.DEFAULT).find()); //not "true" since that *forces* AO, i just want to *allow* AO
 		}
 		

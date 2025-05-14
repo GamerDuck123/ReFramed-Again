@@ -10,4 +10,6 @@ public interface ThemeableBlockEntity {
 	void setTheme(BlockState state, int i);
 
 	List<BlockState> getThemes();
+
+	boolean isSolid();
 }

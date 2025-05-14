@@ -89,7 +89,11 @@ public class RenderHelper {
         BlockState self_theme = frame_entity.getTheme(theme_index);
         BlockState other_theme = frame_entity.getTheme(cull_theme);
 
-        if (self_theme.isSideInvisible(other_theme, null)) return false;
+        try {
+            if (self_theme.isSideInvisible(other_theme, null)) return false;
+        } catch (NullPointerException e) { // this can happen if mod haven't thought about inner faces
+            return true;
+        }
         return !self_theme.isOpaque() || !other_theme.isOpaque();
     }
 
@@ -104,7 +108,7 @@ public class RenderHelper {
             ? e : null;
 
         // normal behaviour
-        if (theme_index == 0 || (self == null && other == null))
+        if ((theme_index == 0 && self != null) || (self == null && other == null))
             return Block.shouldDrawSide(self_state, world, pos, side, other_pos);
 
         // self is a normal Block
@@ -116,7 +120,7 @@ public class RenderHelper {
             VoxelShape other_shape = VoxelShapes.empty();
             for (BlockState s: other.getThemes()) {
                 i++;
-                if (self_state.isSideInvisible(s, side) || s.isOpaque())
+                if (self_state.isSideInvisible(s, side) || (s.isOpaque() && (other.isSolid() || self_state.isTransparent(world ,pos))))
                     other_shape = combine(
                         other_shape,
                         other_block
@@ -137,7 +141,7 @@ public class RenderHelper {
             if (self_theme.isSideInvisible(other_state, side)) return false;
 
             // Opaque is also simple as each model are rendered one by one
-            if (other_state.isOpaque()) {
+            if (other_state.isOpaque() && self.isSolid()) {
                 // no cache section :( because it differs between each instance of the frame
                 VoxelShape self_shape = self_block.getShape(self_state, theme_index).getFace(side);
                 if (self_shape.isEmpty()) return true;
@@ -160,7 +164,7 @@ public class RenderHelper {
             VoxelShape other_shape = VoxelShapes.empty();
             for (BlockState s: other.getThemes()) {
                 i++;
-                if (self_theme.isSideInvisible(s, side) || s.isOpaque())
+                if (self_theme.isSideInvisible(s, side) || (s.isOpaque() && (!self.isSolid() || (other.isSolid() == self.isSolid()))))
                     other_shape = combine(
                         other_shape,
                         other_block

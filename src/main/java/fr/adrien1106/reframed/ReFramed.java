@@ -135,11 +135,11 @@ public class ReFramed implements ModInitializer {
 	private static AbstractBlock.Settings cp(Block base) {
 		return AbstractBlock.Settings.copy(base)
 			.luminance(state -> state.contains(LIGHT) && state.get(LIGHT) ? 15 : 0)
-			.nonOpaque()
 			.sounds(BlockSoundGroup.WOOD)
 			.hardness(0.2f)
-			.suffocates((a,b,c) -> false)
-			.blockVision((a,b,c) -> false);
+			.suffocates(Blocks::never)
+			.solidBlock(Blocks::always)
+			.blockVision(Blocks::always);
 	}
 
 	private static <I extends Item> I registerItem(String path, I item) {

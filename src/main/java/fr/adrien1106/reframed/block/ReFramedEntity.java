@@ -32,12 +32,12 @@ public class ReFramedEntity extends BlockEntity implements ThemeableBlockEntity 
 	protected BlockState first_state = Blocks.AIR.getDefaultState();
 	protected byte bit_field = SOLIDITY_MASK;
 	
-	protected static final byte LIGHT_MASK    = 0b001;
-	protected static final byte REDSTONE_MASK = 0b010;
-	protected static final byte SOLIDITY_MASK = 0b100;
+	public static final byte LIGHT_MASK    = 0b001;
+	public static final byte REDSTONE_MASK = 0b010;
+	public static final byte SOLIDITY_MASK = 0b100;
 
 	public static final String BLOCKSTATE_KEY = "s";
-	protected static final String BITFIELD_KEY = "b";
+	public static final String BITFIELD_KEY = "b";
 	
 	public ReFramedEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -145,7 +145,10 @@ public class ReFramedEntity extends BlockEntity implements ThemeableBlockEntity 
 		if (isSolid()) bit_field &= ~SOLIDITY_MASK;
 		else bit_field |= SOLIDITY_MASK;
 
-		if(world != null) world.setBlockState(pos, getCachedState());
+		if(world != null) {
+			world.setBlockState(pos, getCachedState());
+			ReFramed.chunkRerenderProxy.accept(world, pos);
+		}
 		markDirtyAndDispatch();
 	}
 	

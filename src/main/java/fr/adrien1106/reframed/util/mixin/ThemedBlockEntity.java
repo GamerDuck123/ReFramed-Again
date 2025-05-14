@@ -12,10 +12,11 @@ import net.minecraft.util.math.BlockPos;
 import java.util.ArrayList;
 import java.util.List;
 
-import static fr.adrien1106.reframed.block.ReFramedEntity.BLOCKSTATE_KEY;
+import static fr.adrien1106.reframed.block.ReFramedEntity.*;
 
 public class ThemedBlockEntity extends BlockEntity implements ThemeableBlockEntity {
     private final List<BlockState> themes;
+    private final boolean isSolid;
 
     public ThemedBlockEntity(NbtCompound compound, BlockPos pos, BlockState state) {
         super(null, pos, state);
@@ -26,6 +27,7 @@ public class ThemedBlockEntity extends BlockEntity implements ThemeableBlockEnti
                 compound.getCompound(BLOCKSTATE_KEY + i)
             ));
         }
+        isSolid = !compound.contains(BITFIELD_KEY) || (compound.getByte(BITFIELD_KEY) & SOLIDITY_MASK) != 0;
     }
 
     @Override
@@ -46,5 +48,10 @@ public class ThemedBlockEntity extends BlockEntity implements ThemeableBlockEnti
     @Override
     public List<BlockState> getThemes() {
         return themes;
+    }
+
+    @Override
+    public boolean isSolid() {
+        return isSolid;
     }
 }

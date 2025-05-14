@@ -94,7 +94,7 @@ public class RenderHelper {
         } catch (NullPointerException e) { // this can happen if mod haven't thought about inner faces
             return true;
         }
-        return !self_theme.isOpaque() || !other_theme.isOpaque();
+        return self_theme.isOpaque() != other_theme.isOpaque() && self_theme.isOpaque();
     }
 
     // Doing this method from scratch as it is simpler to do than injecting everywhere
@@ -141,7 +141,7 @@ public class RenderHelper {
             if (self_theme.isSideInvisible(other_state, side)) return false;
 
             // Opaque is also simple as each model are rendered one by one
-            if (other_state.isOpaque() && self.isSolid()) {
+            if (other_state.isOpaque()) {
                 // no cache section :( because it differs between each instance of the frame
                 VoxelShape self_shape = self_block.getShape(self_state, theme_index).getFace(side);
                 if (self_shape.isEmpty()) return true;

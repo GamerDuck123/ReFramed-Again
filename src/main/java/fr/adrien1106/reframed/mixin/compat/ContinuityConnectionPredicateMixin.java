@@ -14,13 +14,13 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public interface ContinuityConnectionPredicateMixin {
 
     @Redirect(
-        method = "shouldConnect(Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/util/math/Direction;Lnet/minecraft/client/texture/Sprite;)Z",
+        method = "shouldConnect(Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/block/BlockState;Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/util/math/Direction;Lnet/minecraft/client/texture/Sprite;)Z",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/world/BlockRenderView;getBlockState(Lnet/minecraft/util/math/BlockPos;)Lnet/minecraft/block/BlockState;"
         )
     ) // TODO better connected textures
-    private BlockState getBlockState(BlockRenderView view, BlockPos pos, @Local(argsOnly = true) BlockState state) {
+    private BlockState getBlockState(BlockRenderView view, BlockPos pos, @Local(argsOnly = true, ordinal = 1) BlockState state) {
         if (!(view.getBlockEntity(pos) instanceof ThemeableBlockEntity frame_entity)) return view.getBlockState(pos);
         return frame_entity.getThemes()
             .stream()

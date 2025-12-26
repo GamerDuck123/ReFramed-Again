@@ -1,5 +1,6 @@
 package fr.adrien1106.reframed.mixin.render;
 
+import fr.adrien1106.reframed.block.ReFramedBlock;
 import fr.adrien1106.reframed.client.util.RenderHelper;
 import fr.adrien1106.reframed.util.blocks.ThemeableBlockEntity;
 import net.minecraft.block.Block;
@@ -21,7 +22,7 @@ public abstract class BlockMixin {
         cancellable = true
     ) // serves as a safety sometimes mods implements culling cache and hence will break some injections...
     private static void shouldDrawSide(BlockState state, BlockView world, BlockPos pos, Direction side, BlockPos other_pos, CallbackInfoReturnable<Boolean> cir) {
-        if (!(world.getBlockEntity(other_pos) instanceof ThemeableBlockEntity)) return;
+        if (!(world.getBlockEntity(other_pos) instanceof ThemeableBlockEntity && state.getBlock() instanceof ReFramedBlock)) return;
         cir.setReturnValue(RenderHelper.shouldDrawSide(state, world, pos, side, other_pos, 0));
     }
 }

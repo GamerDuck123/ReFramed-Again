@@ -4,7 +4,7 @@ import fr.altarik.CreateTag
 
 plugins {
 	id "com.modrinth.minotaur" version "2.+"
-	id 'fabric-loom' version '1.6-SNAPSHOT'
+	id 'fabric-loom' version "${loom_version}"
 	id 'maven-publish'
 }
 
@@ -36,9 +36,9 @@ base {
 sourceSets {
 	main {
 		resources {
-			srcDirs += {
+			srcDirs += [
 				'src/generated'
-			}
+			]
 		}
 	}
 }
@@ -122,7 +122,7 @@ dependencies {
 	modRuntimeOnly "earth.terrarium.chipped:Chipped-fabric-${project.minecraft_version}:3.1.2"
 
 	// Axiom for blueprint support
-	modCompileOnly "maven.modrinth:N6n5dqoA:YxeYxQyz"
+	modCompileOnly "maven.modrinth:N6n5dqoA:Vyl4ZdvR"
     modCompileOnly "com.github.moulberry:AxiomClientAPI:1.0.5.3"
 
 	// Fabric API.

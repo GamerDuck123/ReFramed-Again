@@ -5,65 +5,65 @@ import fr.adrien1106.reframed.generator.BlockStateProvider;
 import fr.adrien1106.reframed.generator.GBlockstate;
 import fr.adrien1106.reframed.generator.RecipeSetter;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricRecipeProvider;
-import net.minecraft.block.Block;
-import net.minecraft.data.client.BlockStateSupplier;
-import net.minecraft.data.client.MultipartBlockStateSupplier;
-import net.minecraft.data.client.When;
-import net.minecraft.data.server.recipe.RecipeExporter;
-import net.minecraft.data.server.recipe.RecipeProvider;
-import net.minecraft.data.server.recipe.ShapedRecipeJsonBuilder;
-import net.minecraft.item.ItemConvertible;
-import net.minecraft.recipe.book.RecipeCategory;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Direction;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.data.models.blockstates.BlockStateGenerator;
+import net.minecraft.data.models.blockstates.MultiPartGenerator;
+import net.minecraft.data.models.blockstates.Condition;
+import net.minecraft.data.recipes.RecipeOutput;
+import net.minecraft.data.recipes.RecipeProvider;
+import net.minecraft.data.recipes.ShapedRecipeBuilder;
+import net.minecraft.world.level.ItemLike;
+import net.minecraft.data.recipes.RecipeCategory;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Direction;
 
-import static net.minecraft.block.enums.DoorHinge.*;
-import static net.minecraft.data.client.VariantSettings.Rotation.*;
-import static net.minecraft.state.property.Properties.*;
+import static net.minecraft.world.level.block.state.properties.DoorHingeSide.*;
+import static net.minecraft.data.models.blockstates.VariantProperties.Rotation.*;
+import static net.minecraft.world.level.block.state.properties.BlockStateProperties.*;
 
 public class Door implements RecipeSetter, BlockStateProvider {
 
     @Override
-    public void setRecipe(RecipeExporter exporter, ItemConvertible convertible) {
-        RecipeProvider.offerStonecuttingRecipe(exporter, RecipeCategory.BUILDING_BLOCKS, convertible, ReFramed.CUBE, 1);
-        ShapedRecipeJsonBuilder
-            .create(RecipeCategory.BUILDING_BLOCKS, convertible, 3)
+    public void setRecipe(RecipeOutput exporter, ItemLike convertible) {
+        RecipeProvider.stonecutterResultFromBase(exporter, RecipeCategory.BUILDING_BLOCKS, convertible, ReFramed.CUBE, 1);
+        ShapedRecipeBuilder
+            .shaped(RecipeCategory.BUILDING_BLOCKS, convertible, 3)
             .pattern("II")
             .pattern("II")
             .pattern("II")
-            .input('I', ReFramed.CUBE)
-            .criterion(FabricRecipeProvider.hasItem(ReFramed.CUBE), FabricRecipeProvider.conditionsFromItem(ReFramed.CUBE))
-            .criterion(FabricRecipeProvider.hasItem(convertible), FabricRecipeProvider.conditionsFromItem(convertible))
-            .offerTo(exporter);
+            .define('I', ReFramed.CUBE)
+            .unlockedBy(FabricRecipeProvider.getHasName(ReFramed.CUBE), FabricRecipeProvider.has(ReFramed.CUBE))
+            .unlockedBy(FabricRecipeProvider.getHasName(convertible), FabricRecipeProvider.has(convertible))
+            .save(exporter);
     }
 
     @Override
-    public BlockStateSupplier getMultipart(Block block) {
-        Identifier door = ReFramed.id("trapdoor_open_special");
-        return MultipartBlockStateSupplier.create(block)
+    public BlockStateGenerator getMultipart(Block block) {
+        ResourceLocation door = ReFramed.id("trapdoor_open_special");
+        return MultiPartGenerator.multiPart(block)
             // SOUTH
-            .with(When.anyOf(
+            .with(Condition.or(
                     GBlockstate.when(OPEN, false, HORIZONTAL_FACING, Direction.SOUTH),
                     GBlockstate.when(OPEN, true, HORIZONTAL_FACING, Direction.EAST, DOOR_HINGE, LEFT),
                     GBlockstate.when(OPEN, true, HORIZONTAL_FACING, Direction.WEST, DOOR_HINGE, RIGHT)
                 ),
                 GBlockstate.variant(door, true, R0, R0))
             // WEST
-            .with(When.anyOf(
+            .with(Condition.or(
                     GBlockstate.when(OPEN, false, HORIZONTAL_FACING, Direction.WEST),
                     GBlockstate.when(OPEN, true, HORIZONTAL_FACING, Direction.SOUTH, DOOR_HINGE, LEFT),
                     GBlockstate.when(OPEN, true, HORIZONTAL_FACING, Direction.NORTH, DOOR_HINGE, RIGHT)
                 ),
                 GBlockstate.variant(door, true, R0, R90))
             // NORTH
-            .with(When.anyOf(
+            .with(Condition.or(
                     GBlockstate.when(OPEN, false, HORIZONTAL_FACING, Direction.NORTH),
                     GBlockstate.when(OPEN, true, HORIZONTAL_FACING, Direction.WEST, DOOR_HINGE, LEFT),
                     GBlockstate.when(OPEN, true, HORIZONTAL_FACING, Direction.EAST, DOOR_HINGE, RIGHT)
                 ),
                 GBlockstate.variant(door, true, R0, R180))
             // EAST
-            .with(When.anyOf(
+            .with(Condition.or(
                     GBlockstate.when(OPEN, false, HORIZONTAL_FACING, Direction.EAST),
                     GBlockstate.when(OPEN, true, HORIZONTAL_FACING, Direction.NORTH, DOOR_HINGE, LEFT),
                     GBlockstate.when(OPEN, true, HORIZONTAL_FACING, Direction.SOUTH, DOOR_HINGE, RIGHT)

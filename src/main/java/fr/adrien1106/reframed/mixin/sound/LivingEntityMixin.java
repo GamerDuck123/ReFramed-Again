@@ -2,11 +2,11 @@ package fr.adrien1106.reframed.mixin.sound;
 
 import fr.adrien1106.reframed.block.ReFramedBlock;
 import fr.adrien1106.reframed.util.blocks.ThemeableBlockEntity;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -18,10 +18,10 @@ public class LivingEntityMixin {
         method = "playBlockFallSound",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/world/World;getBlockState(Lnet/minecraft/util/math/BlockPos;)Lnet/minecraft/block/BlockState;"
+            target = "Lnet/minecraft/world/level/Level;getBlockState(Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/block/state/BlockState;"
         )
     )
-    private BlockState playCamoFallSound(World world, BlockPos pos) {
+    private BlockState playCamoFallSound(Level world, BlockPos pos) {
         BlockState state = world.getBlockState(pos);
         if (state.getBlock() instanceof ReFramedBlock frame_block
             && world.getBlockEntity(pos) instanceof ThemeableBlockEntity frame_entity

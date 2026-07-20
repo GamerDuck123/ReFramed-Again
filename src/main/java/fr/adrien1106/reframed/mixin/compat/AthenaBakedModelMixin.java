@@ -1,3 +1,4 @@
+// TODO(Ravel): Failed to fully resolve file: null cannot be cast to non-null type com.intellij.psi.PsiJavaCodeReferenceElement
 package fr.adrien1106.reframed.mixin.compat;
 
 import earth.terrarium.athena.api.client.fabric.AthenaBakedModel;
@@ -11,13 +12,13 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.fabricmc.fabric.api.renderer.v1.Renderer;
 import net.fabricmc.fabric.api.renderer.v1.mesh.MutableQuadView;
 import net.fabricmc.fabric.api.renderer.v1.mesh.QuadEmitter;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.render.model.BakedModel;
-import net.minecraft.client.render.model.BakedQuad;
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.BlockRenderView;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.BlockAndTintGetter;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -30,7 +31,7 @@ public abstract class AthenaBakedModelMixin implements DynamicBakedModel, BakedM
 
     @Shadow(remap = false) @Final private AthenaBlockModel model;
 
-    @Shadow(remap = false) @Final private Int2ObjectMap<Sprite> textures;
+    @Shadow(remap = false) @Final private Int2ObjectMap<TextureAtlasSprite> textures;
 
     @Shadow public abstract boolean useAmbientOcclusion();
 
@@ -43,7 +44,7 @@ public abstract class AthenaBakedModelMixin implements DynamicBakedModel, BakedM
      * @return - the rebakedmodel containing the computed quads
      */
     @Override
-    public BakedModel computeQuads(@Nullable BlockRenderView level, BlockState origin_state, @Nullable BlockPos pos, int theme_index) {
+    public BakedModel computeQuads(@Nullable BlockAndTintGetter level, BlockState origin_state, @Nullable BlockPos pos, int theme_index) {
         Map<Direction, List<BakedQuad>> face_quads = new HashMap<>();
         Renderer r = ReFramedClient.HELPER.getFabricRenderer();
         QuadEmitter emitter = r.meshBuilder().getEmitter();
@@ -60,7 +61,7 @@ public abstract class AthenaBakedModelMixin implements DynamicBakedModel, BakedM
                 ? model.getDefaultQuads(direction).get(direction)
                 : model.getQuads(getter, state, pos, direction)
                 ).forEach(sprite -> face_quads.computeIfPresent(direction, (d, quads) -> {
-                    Sprite texture = textures.get(sprite.sprite());
+                    TextureAtlasSprite texture = textures.get(sprite.sprite());
                     if (texture == null) return quads;
                     emitter.square(direction, sprite.left(), sprite.bottom(), sprite.right(), sprite.top(), sprite.depth());
 

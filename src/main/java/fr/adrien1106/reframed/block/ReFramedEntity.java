@@ -3,21 +3,21 @@ package fr.adrien1106.reframed.block;
 import fr.adrien1106.reframed.ReFramed;
 import fr.adrien1106.reframed.util.blocks.BlockProperties;
 import fr.adrien1106.reframed.util.blocks.ThemeableBlockEntity;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtHelper;
-import net.minecraft.network.listener.ClientPlayPacketListener;
-import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
-import net.minecraft.registry.Registries;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.BlockPos;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,7 +29,7 @@ import java.util.Objects;
 //is pretty important since players might place a lot of them. There were tons and tons of these at Blanketcon.
 //To that end, most of the state_key has been crammed into a bitfield.
 public class ReFramedEntity extends BlockEntity implements ThemeableBlockEntity {
-	protected BlockState first_state = Blocks.AIR.getDefaultState();
+	protected BlockState first_state = Blocks.AIR.defaultBlockState();
 	protected byte bit_field = SOLIDITY_MASK;
 	
 	public static final byte LIGHT_MASK    = 0b001;
@@ -44,37 +44,37 @@ public class ReFramedEntity extends BlockEntity implements ThemeableBlockEntity 
 	}
 	
 	@Override
-	public void readNbt(NbtCompound nbt) {
-		super.readNbt(nbt);
+	public void load(CompoundTag nbt) {
+		super.load(nbt);
 		
 		BlockState rendered_state = first_state; // keep previous state_key to check if rerender is needed
-		first_state = NbtHelper.toBlockState(Registries.BLOCK.getReadOnlyWrapper(), nbt.getCompound(BLOCKSTATE_KEY + 1));
+		first_state = NbtUtils.readBlockState(BuiltInRegistries.BLOCK.asLookup(), nbt.getCompound(BLOCKSTATE_KEY + 1));
 		if (nbt.contains(BITFIELD_KEY)) bit_field = nbt.getByte(BITFIELD_KEY);
 		
 		// Force a chunk remesh on the client if the displayed blockstate has changed
-		if(world != null && world.isClient && !Objects.equals(rendered_state, first_state))
-			ReFramed.chunkRerenderProxy.accept(world, pos);
+		if(level != null && level.isClientSide && !Objects.equals(rendered_state, first_state))
+			ReFramed.chunkRerenderProxy.accept(level, worldPosition);
 	}
 	
 	@Override
-	public void writeNbt(NbtCompound nbt) {
-		super.writeNbt(nbt);
+	public void saveAdditional(CompoundTag nbt) {
+		super.saveAdditional(nbt);
 
-		nbt.put(BLOCKSTATE_KEY + 1, NbtHelper.fromBlockState(first_state));
+		nbt.put(BLOCKSTATE_KEY + 1, NbtUtils.writeBlockState(first_state));
 		if(bit_field != SOLIDITY_MASK) nbt.putByte(BITFIELD_KEY, bit_field);
 	}
 
 	public static @NotNull BlockState readStateFromItem(ItemStack stack, int state) {
-		NbtCompound nbt = BlockItem.getBlockEntityNbt(stack);
-		if(nbt == null) return Blocks.AIR.getDefaultState();
+		CompoundTag nbt = BlockItem.getBlockEntityData(stack);
+		if(nbt == null) return Blocks.AIR.defaultBlockState();
 		
 		//slightly paranoid NBT handling cause you never know what mysteries are afoot with items
-		NbtElement element;
+		Tag element;
 		if(nbt.contains(BLOCKSTATE_KEY + state)) element = nbt.get(BLOCKSTATE_KEY + state);
-		else return Blocks.AIR.getDefaultState();
+		else return Blocks.AIR.defaultBlockState();
 		
-		if(!(element instanceof NbtCompound compound)) return Blocks.AIR.getDefaultState();
-		else return NbtHelper.toBlockState(Registries.BLOCK.getReadOnlyWrapper(), compound);
+		if(!(element instanceof CompoundTag compound)) return Blocks.AIR.defaultBlockState();
+		else return NbtUtils.readBlockState(BuiltInRegistries.BLOCK.asLookup(), compound);
 	}
 	
 	//Awkward: usually the BlockState is the source of truth for things like the "emits light" blockstate, but if you
@@ -84,11 +84,11 @@ public class ReFramedEntity extends BlockEntity implements ThemeableBlockEntity 
 	public static @Nullable BlockState getNbtLightLevel(@Nullable BlockState state, ItemStack stack) {
 		if(state == null || stack == null) return state;
 		
-		NbtCompound nbt = BlockItem.getBlockEntityNbt(stack);
+		CompoundTag nbt = BlockItem.getBlockEntityData(stack);
 		if(nbt == null) return state;
 		
-		if(state.contains(BlockProperties.LIGHT)) {
-			state = state.with(BlockProperties.LIGHT,
+		if(state.hasProperty(BlockProperties.LIGHT)) {
+			state = state.setValue(BlockProperties.LIGHT,
 				((nbt.contains(BITFIELD_KEY)
 					? nbt.getByte(BITFIELD_KEY)
 					: SOLIDITY_MASK)
@@ -133,7 +133,7 @@ public class ReFramedEntity extends BlockEntity implements ThemeableBlockEntity 
 		if (emitsRedstone()) bit_field &= ~REDSTONE_MASK;
 		else bit_field |= REDSTONE_MASK;
 
-		if(world != null) world.updateNeighbors(pos, getCachedState().getBlock());
+		if(level != null) level.blockUpdated(worldPosition, getBlockState().getBlock());
 		markDirtyAndDispatch();
 	}
 
@@ -145,9 +145,9 @@ public class ReFramedEntity extends BlockEntity implements ThemeableBlockEntity 
 		if (isSolid()) bit_field &= ~SOLIDITY_MASK;
 		else bit_field |= SOLIDITY_MASK;
 
-		if(world != null) {
-			world.setBlockState(pos, getCachedState());
-			ReFramed.chunkRerenderProxy.accept(world, pos);
+		if(level != null) {
+			level.setBlockAndUpdate(worldPosition, getBlockState());
+			ReFramed.chunkRerenderProxy.accept(level, worldPosition);
 		}
 		markDirtyAndDispatch();
 	}
@@ -158,21 +158,21 @@ public class ReFramedEntity extends BlockEntity implements ThemeableBlockEntity 
 
 	@Nullable
 	@Override
-	public Packet<ClientPlayPacketListener> toUpdatePacket() {
-		return BlockEntityUpdateS2CPacket.create(this);
+	public Packet<ClientGamePacketListener> getUpdatePacket() {
+		return ClientboundBlockEntityDataPacket.create(this);
 	}
 	
 	@Override
-	public NbtCompound toInitialChunkDataNbt() {
-		return createNbt();
+	public CompoundTag getUpdateTag() {
+		return saveWithoutMetadata();
 	}
 	
 	protected void dispatch() {
-		if(world instanceof ServerWorld sworld) sworld.getChunkManager().markForUpdate(pos);
+		if(level instanceof ServerLevel sworld) sworld.getChunkSource().blockChanged(worldPosition);
 	}
 	
 	protected void markDirtyAndDispatch() {
-		markDirty();
+		setChanged();
 		dispatch();
 	}
 }

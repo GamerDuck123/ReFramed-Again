@@ -4,12 +4,12 @@ import fr.adrien1106.reframed.compat.ICTMQuadTransform;
 import me.pepperbell.continuity.client.model.QuadProcessors;
 import me.pepperbell.continuity.impl.client.ProcessingContextImpl;
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.BlockRenderView;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.BlockAndTintGetter;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -26,13 +26,13 @@ public abstract class ContinuityCTMQuadTransformMixin implements ICTMQuadTransfo
     @Shadow(remap = false) public abstract void reset();
 
     @Shadow
-    public abstract void prepare(BlockRenderView blockView, BlockState appearanceState, BlockState state, BlockPos pos, Supplier<Random> randomSupplier, RenderContext renderContext, boolean useManualCulling, Function<Sprite, QuadProcessors.Slice> sliceFunc);
+    public abstract void prepare(BlockAndTintGetter blockView, BlockState appearanceState, BlockState state, BlockPos pos, Supplier<RandomSource> randomSupplier, RenderContext renderContext, boolean useManualCulling, Function<TextureAtlasSprite, QuadProcessors.Slice> sliceFunc);
 
     @Redirect(
         method = "transform",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/fabricmc/fabric/api/renderer/v1/render/RenderContext;isFaceCulled(Lnet/minecraft/util/math/Direction;)Z"
+            target = "Lnet/fabricmc/fabric/api/renderer/v1/render/RenderContext;isFaceCulled(Lnet/minecraft/core/Direction;)Z"
         )
     )
     private boolean camo_replacement(RenderContext ctx, Direction face) {
@@ -41,7 +41,7 @@ public abstract class ContinuityCTMQuadTransformMixin implements ICTMQuadTransfo
     }
 
     // uses this because invoker did not want to work for some reason
-    public void invokePrepare(BlockRenderView view, BlockState appearance, BlockState state, BlockPos pos, Supplier<Random> random, RenderContext ctx, boolean manual_culling, Function<Sprite, QuadProcessors.Slice> slice) {
+    public void invokePrepare(BlockAndTintGetter view, BlockState appearance, BlockState state, BlockPos pos, Supplier<RandomSource> random, RenderContext ctx, boolean manual_culling, Function<TextureAtlasSprite, QuadProcessors.Slice> slice) {
         prepare(view, appearance, state, pos, random, ctx, manual_culling, slice);
     }
 

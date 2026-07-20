@@ -3,17 +3,19 @@ package fr.adrien1106.reframed.generator;
 import fr.adrien1106.reframed.ReFramed;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricAdvancementProvider;
-import net.minecraft.advancement.Advancement;
-import net.minecraft.advancement.AdvancementEntry;
-import net.minecraft.advancement.AdvancementFrame;
-import net.minecraft.advancement.AdvancementRewards;
-import net.minecraft.advancement.criterion.InventoryChangedCriterion;
-import net.minecraft.item.Items;
-import net.minecraft.registry.Registries;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.advancements.AdvancementType;
+import net.minecraft.advancements.AdvancementRewards;
+import net.minecraft.advancements.critereon.InventoryChangeTrigger;
+import net.minecraft.world.item.Items;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.function.Consumer;
+
+import static net.minecraft.advancements.AdvancementRewards.Builder.experience;
 
 public class GAdvancement extends FabricAdvancementProvider {
     protected GAdvancement(FabricDataOutput output) {
@@ -21,24 +23,24 @@ public class GAdvancement extends FabricAdvancementProvider {
     }
 
     @Override
-    public void generateAdvancement(Consumer<AdvancementEntry> consumer) {
-        Advancement.Builder builder = Advancement.Builder.create()
+    public void generateAdvancement(Consumer<AdvancementHolder> consumer) {
+        Advancement.Builder builder = Advancement.Builder.advancement()
             .display(
                 Items.CAKE,
-                Text.literal("Is Everything A Lie ?"),
-                Text.translatable("advancements.reframed.description"),
-                new Identifier("textures/gui/advancements/backgrounds/adventure.png"),
-                AdvancementFrame.TASK,
+                Component.literal("Is Everything A Lie ?"),
+                Component.translatable("advancements.reframed.description"),
+                new ResourceLocation("textures/gui/advancements/backgrounds/adventure.png"),
+                AdvancementType.TASK,
                 true,
                 true,
                 false
-            ).rewards(AdvancementRewards.Builder.experience(1000));
+            ).rewards(net.minecraft.advancements.AdvancementRewards.Builder.experience(1000));
         ReFramed.BLOCKS.forEach(block ->
-            builder.criterion(
-                "get_" + Registries.BLOCK.getId(block).getPath(),
-                InventoryChangedCriterion.Conditions.items(block)
+            builder.addCriterion(
+                "get_" + BuiltInRegistries.BLOCK.getKey(block).getPath(),
+                InventoryChangeTrigger.TriggerInstance.hasItems(block)
             )
         );
-        builder.build(consumer, ReFramed.MODID + "/root");
+        builder.save(consumer, ReFramed.MODID + "/root");
     }
 }

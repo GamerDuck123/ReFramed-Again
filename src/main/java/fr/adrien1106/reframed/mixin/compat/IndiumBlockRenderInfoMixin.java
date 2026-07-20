@@ -4,10 +4,10 @@ import fr.adrien1106.reframed.client.util.RenderHelper;
 import fr.adrien1106.reframed.util.blocks.ThemeableBlockEntity;
 import fr.adrien1106.reframed.util.mixin.IBlockRenderInfoMixin;
 import link.infra.indium.renderer.render.BlockRenderInfo;
-import net.minecraft.block.BlockState;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.BlockRenderView;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.BlockAndTintGetter;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -21,7 +21,7 @@ public abstract class IndiumBlockRenderInfoMixin implements IBlockRenderInfoMixi
     @Shadow public abstract void prepareForBlock(BlockState blockState, BlockPos blockPos, long seed, boolean modelAo);
 
     @Shadow public BlockPos blockPos;
-    @Shadow public BlockRenderView blockView;
+    @Shadow public BlockAndTintGetter blockView;
     @Shadow public BlockState blockState;
 
     @Unique private int theme_index = 0;
@@ -31,13 +31,13 @@ public abstract class IndiumBlockRenderInfoMixin implements IBlockRenderInfoMixi
         method = "shouldDrawFace",
         at = @At(
             value = "INVOKE_ASSIGN",
-            target = "Lnet/minecraft/util/math/Direction;getId()I",
+            target = "Lnet/minecraft/core/Direction;get3DDataValue()I",
             shift = At.Shift.AFTER
         ),
         cancellable = true
     )
     private void shouldDrawInnerFace(Direction face, CallbackInfoReturnable<Boolean> cir) {
-        BlockPos other_pos = blockPos.offset(face);
+        BlockPos other_pos = blockPos.relative(face);
         if (!(blockView.getBlockEntity(blockPos) instanceof ThemeableBlockEntity
             || blockView.getBlockEntity(other_pos) instanceof ThemeableBlockEntity)
         ) return;

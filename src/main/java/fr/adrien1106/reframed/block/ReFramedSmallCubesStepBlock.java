@@ -3,16 +3,17 @@ package fr.adrien1106.reframed.block;
 import fr.adrien1106.reframed.util.blocks.BlockHelper;
 import fr.adrien1106.reframed.util.blocks.Corner;
 import fr.adrien1106.reframed.util.blocks.Edge;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.ShapeContext;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.state.StateManager;
-import net.minecraft.util.BlockMirror;
-import net.minecraft.util.BlockRotation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.world.BlockView;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.level.BlockGetter;
 import org.jetbrains.annotations.Nullable;
 
 import static fr.adrien1106.reframed.block.ReFramedSmallCubeBlock.SMALL_CUBE_VOXELS;
@@ -21,43 +22,43 @@ import static fr.adrien1106.reframed.util.blocks.BlockProperties.EDGE;
 
 public class ReFramedSmallCubesStepBlock extends WaterloggableReFramedDoubleBlock {
 
-    public ReFramedSmallCubesStepBlock(Settings settings) {
+    public ReFramedSmallCubesStepBlock(Properties settings) {
         super(settings);
-        setDefaultState(getDefaultState().with(EDGE, Edge.NORTH_DOWN));
+        registerDefaultState(defaultBlockState().setValue(EDGE, Edge.NORTH_DOWN));
     }
 
     @Override
-    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
-        super.appendProperties(builder.add(EDGE));
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder.add(EDGE));
     }
 
     @Nullable
     @Override
-    public BlockState getPlacementState(ItemPlacementContext ctx) {
-        return super.getPlacementState(ctx).with(EDGE, BlockHelper.getPlacementEdge(ctx));
+    public BlockState getStateForPlacement(BlockPlaceContext ctx) {
+        return super.getStateForPlacement(ctx).setValue(EDGE, BlockHelper.getPlacementEdge(ctx));
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
-        return getStepShape(state.get(EDGE));
+    public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+        return getStepShape(state.getValue(EDGE));
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public BlockState rotate(BlockState state, BlockRotation rotation) {
-        return state.with(EDGE, state.get(EDGE).rotate(rotation));
+    public BlockState rotate(BlockState state, Rotation rotation) {
+        return state.setValue(EDGE, state.getValue(EDGE).rotate(rotation));
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public BlockState mirror(BlockState state, BlockMirror mirror) {
-        return state.with(EDGE, state.get(EDGE).mirror(mirror));
+    public BlockState mirror(BlockState state, Mirror mirror) {
+        return state.setValue(EDGE, state.getValue(EDGE).mirror(mirror));
     }
 
     @Override
     public VoxelShape getShape(BlockState state, int i) {
-        Edge edge = state.get(EDGE);
+        Edge edge = state.getValue(EDGE);
         return SMALL_CUBE_VOXELS[Corner.getByDirections(
             edge.getFirstDirection(),
             edge.getSecondDirection(),

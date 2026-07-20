@@ -5,16 +5,23 @@ import fr.adrien1106.reframed.block.*;
 import fr.adrien1106.reframed.generator.block.*;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricModelProvider;
-import net.minecraft.block.Block;
+import net.minecraft.data.models.BlockModelGenerators;
+import net.minecraft.data.models.ItemModelGenerators;
+import net.minecraft.data.models.blockstates.Condition;
+import net.minecraft.data.models.blockstates.MultiVariantGenerator;
+import net.minecraft.data.models.blockstates.Variant;
+import net.minecraft.data.models.blockstates.VariantProperties;
+import net.minecraft.data.models.model.ModelTemplates;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.data.client.*;
-import net.minecraft.state.property.Property;
-import net.minecraft.util.Identifier;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import static net.minecraft.data.client.VariantSettings.Rotation.R0;
+import static net.minecraft.data.models.blockstates.VariantProperties.Rotation.R0;
 
 public class GBlockstate extends FabricModelProvider {
     private static final Map<Class<? extends Block>, BlockStateProvider> providers = new HashMap<>();
@@ -60,13 +67,13 @@ public class GBlockstate extends FabricModelProvider {
     }
 
     @Override
-    public void generateBlockStateModels(BlockStateModelGenerator model_generator) {
+    public void generateBlockStateModels(BlockModelGenerators model_generator) {
         ReFramed.BLOCKS
-            .forEach(model_generator::excludeFromSimpleItemModelGeneration);
+            .forEach(model_generator::skipAutoItemBlock);
         ReFramed.BLOCKS.stream()
             .map(block -> {
                 if (providers.containsKey(block.getClass())) return providers.get(block.getClass()).getMultipart(block);
-                return VariantsBlockStateSupplier.create(
+                return MultiVariantGenerator.multiVariant(
                     block,
                     GBlockstate.variant(
                         ReFramed.id("cube_special"),
@@ -76,30 +83,30 @@ public class GBlockstate extends FabricModelProvider {
                 );
             })
             .filter(Objects::nonNull)
-            .forEach(model_generator.blockStateCollector);
+            .forEach(model_generator.blockStateOutput);
     }
 
     @Override
-    public void generateItemModels(ItemModelGenerator model_generator) {
-        ReFramed.ITEMS.forEach(item -> model_generator.register(item, Models.GENERATED));
+    public void generateItemModels(ItemModelGenerators model_generator) {
+        ReFramed.ITEMS.forEach(item -> model_generator.generateFlatItem(item, ModelTemplates.FLAT_ITEM));
     }
 
-    public static BlockStateVariant variant(Identifier model, boolean uv_lock, VariantSettings.Rotation x, VariantSettings.Rotation y) {
-        BlockStateVariant variant = BlockStateVariant.create().put(VariantSettings.MODEL, model);
-        if (uv_lock) variant.put(VariantSettings.UVLOCK, uv_lock);
-        if (!x.equals(R0)) variant.put(VariantSettings.X, x);
-        if (!y.equals(R0)) variant.put(VariantSettings.Y, y);
+    public static Variant variant(ResourceLocation model, boolean uv_lock, VariantProperties.Rotation x, VariantProperties.Rotation y) {
+        Variant variant = Variant.variant().with(VariantProperties.MODEL, model);
+        if (uv_lock) variant.with(VariantProperties.UV_LOCK, uv_lock);
+        if (!x.equals(R0)) variant.with(VariantProperties.X_ROT, x);
+        if (!y.equals(R0)) variant.with(VariantProperties.Y_ROT, y);
         return variant;
     }
 
-    public static <T extends Comparable<T>> When when(Property<T> property_1, T value_1) {
-        return When.create().set(property_1, value_1);
+    public static <T extends Comparable<T>> Condition when(Property<T> property_1, T value_1) {
+        return Condition.condition().term(property_1, value_1);
     }
 
     public static <T extends Comparable<T>,
-        U extends Comparable<U>>  When when(Property<T> property_1, T value_1,
-                                            Property<U> property_2, U value_2) {
-        return When.allOf(
+        U extends Comparable<U>> Condition when(Property<T> property_1, T value_1,
+                                                Property<U> property_2, U value_2) {
+        return Condition.and(
             when(property_1, value_1),
             when(property_2, value_2)
         );
@@ -107,10 +114,10 @@ public class GBlockstate extends FabricModelProvider {
 
     public static <T extends Comparable<T>,
         U extends Comparable<U>,
-        V extends Comparable<V>> When when(Property<T> property_1, T value_1,
-                                           Property<U> property_2, U value_2,
-                                           Property<V> property_3, V value_3) {
-        return When.allOf(
+        V extends Comparable<V>> Condition when(Property<T> property_1, T value_1,
+                                                Property<U> property_2, U value_2,
+                                                Property<V> property_3, V value_3) {
+        return Condition.and(
             when(property_1, value_1),
             when(property_2, value_2),
             when(property_3, value_3)
@@ -120,11 +127,11 @@ public class GBlockstate extends FabricModelProvider {
     public static <T extends Comparable<T>,
         U extends Comparable<U>,
         V extends Comparable<V>,
-        W extends Comparable<W>> When when(Property<T> property_1, T value_1,
-                                           Property<U> property_2, U value_2,
-                                           Property<V> property_3, V value_3,
-                                           Property<W> property_4, W value_4) {
-        return When.allOf(
+        W extends Comparable<W>> Condition when(Property<T> property_1, T value_1,
+                                                Property<U> property_2, U value_2,
+                                                Property<V> property_3, V value_3,
+                                                Property<W> property_4, W value_4) {
+        return Condition.and(
             when(property_1, value_1),
             when(property_2, value_2),
             when(property_3, value_3),
@@ -136,12 +143,12 @@ public class GBlockstate extends FabricModelProvider {
         U extends Comparable<U>,
         V extends Comparable<V>,
         W extends Comparable<W>,
-        X extends Comparable<X>> When when(Property<T> property_1, T value_1,
-                                           Property<U> property_2, U value_2,
-                                           Property<V> property_3, V value_3,
-                                           Property<W> property_4, W value_4,
-                                           Property<X> property_5, X value_5) {
-        return When.allOf(
+        X extends Comparable<X>> Condition when(Property<T> property_1, T value_1,
+                                                Property<U> property_2, U value_2,
+                                                Property<V> property_3, V value_3,
+                                                Property<W> property_4, W value_4,
+                                                Property<X> property_5, X value_5) {
+        return Condition.and(
             when(property_1, value_1),
             when(property_2, value_2),
             when(property_3, value_3),

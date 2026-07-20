@@ -5,26 +5,33 @@ import fr.adrien1106.reframed.util.VoxelHelper;
 import fr.adrien1106.reframed.util.blocks.BlockHelper;
 import fr.adrien1106.reframed.util.blocks.Edge;
 import fr.adrien1106.reframed.util.blocks.StairShape;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.ShapeContext;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.state.StateManager;
-import net.minecraft.util.BlockMirror;
-import net.minecraft.util.BlockRotation;
-import net.minecraft.util.function.BooleanBiFunction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.util.shape.VoxelShapes;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.WorldAccess;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.phys.shapes.BooleanOp;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.LevelAccessor;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.stream.Stream;
 
+// TODO(Ravel): ambiguous static import, members with name VoxelListBuilder have different new names
+//
+// TODO(Ravel): ambiguous static import, members with name VoxelListBuilder have different new names
+//
+// TODO(Ravel): ambiguous static import, members with name VoxelListBuilder have different new names
+//
 import static fr.adrien1106.reframed.util.VoxelHelper.VoxelListBuilder;
 import static fr.adrien1106.reframed.util.blocks.BlockProperties.EDGE;
 import static fr.adrien1106.reframed.util.blocks.BlockProperties.STAIR_SHAPE;
@@ -33,29 +40,29 @@ import static fr.adrien1106.reframed.util.blocks.StairShape.*;
 public class ReFramedStairBlock extends WaterloggableReFramedBlock {
 	public static final VoxelShape[] STAIR_VOXELS;
 
-	public ReFramedStairBlock(Settings settings) {
+	public ReFramedStairBlock(Properties settings) {
 		super(settings);
-		setDefaultState(getDefaultState().with(EDGE, Edge.NORTH_DOWN).with(STAIR_SHAPE, STRAIGHT));
+		registerDefaultState(defaultBlockState().setValue(EDGE, Edge.NORTH_DOWN).setValue(STAIR_SHAPE, STRAIGHT));
 	}
 	
 	@Override
-	protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
-		super.appendProperties(builder.add(EDGE, STAIR_SHAPE));
+	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+		super.createBlockStateDefinition(builder.add(EDGE, STAIR_SHAPE));
 	}
 
 	@Override
     @SuppressWarnings("deprecation")
-	public boolean canReplace(BlockState state, ItemPlacementContext context) {
+	public boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
         if (context.getPlayer() == null) return false;
 		return !(
-			context.getPlayer().isSneaking()
-			|| !(context.getStack().getItem() instanceof BlockItem block_item)
+			context.getPlayer().isShiftKeyDown()
+			|| !(context.getItemInHand().getItem() instanceof BlockItem block_item)
 			|| !(
 				block_item.getBlock() == ReFramed.STEP
 				&& ReFramed.STAIRS_CUBE
 					.matchesShape(
-						context.getHitPos(),
-						context.getBlockPos(),
+						context.getClickLocation(),
+						context.getClickedPos(),
 						state,
 						2
 					)
@@ -64,59 +71,59 @@ public class ReFramedStairBlock extends WaterloggableReFramedBlock {
 	}
 
 	@Override
-	public BlockState getStateForNeighborUpdate(BlockState state, Direction direction, BlockState neighbor_state, WorldAccess world, BlockPos pos, BlockPos moved) {
-		return super.getStateForNeighborUpdate(state, direction, neighbor_state, world, pos, moved)
-			.with(STAIR_SHAPE, BlockHelper.getStairsShape(state.get(EDGE), world, pos));
+	public BlockState updateShape(BlockState state, Direction direction, BlockState neighbor_state, LevelAccessor world, BlockPos pos, BlockPos moved) {
+		return super.updateShape(state, direction, neighbor_state, world, pos, moved)
+			.setValue(STAIR_SHAPE, BlockHelper.getStairsShape(state.getValue(EDGE), world, pos));
 	}
 
 	@Nullable
 	@Override
-	public BlockState getPlacementState(ItemPlacementContext ctx) {
-		BlockState current_state = ctx.getWorld().getBlockState(ctx.getBlockPos());
-		if (current_state.isOf(ReFramed.STEP)) {
-			Edge edge = current_state.get(EDGE).opposite();
-			StairShape shape = BlockHelper.getStairsShape(edge, ctx.getWorld(), ctx.getBlockPos());
-			return ReFramed.STAIRS_CUBE.getDefaultState()
-				.with(EDGE, edge)
-				.with(STAIR_SHAPE, shape);
+	public BlockState getStateForPlacement(BlockPlaceContext ctx) {
+		BlockState current_state = ctx.getLevel().getBlockState(ctx.getClickedPos());
+		if (current_state.is(ReFramed.STEP)) {
+			Edge edge = current_state.getValue(EDGE).opposite();
+			StairShape shape = BlockHelper.getStairsShape(edge, ctx.getLevel(), ctx.getClickedPos());
+			return ReFramed.STAIRS_CUBE.defaultBlockState()
+				.setValue(EDGE, edge)
+				.setValue(STAIR_SHAPE, shape);
 		}
 
 		Edge edge = BlockHelper.getPlacementEdge(ctx);
-		StairShape shape = BlockHelper.getStairsShape(edge, ctx.getWorld(), ctx.getBlockPos());
-		return super.getPlacementState(ctx).with(EDGE, edge).with(STAIR_SHAPE, shape);
+		StairShape shape = BlockHelper.getStairsShape(edge, ctx.getLevel(), ctx.getClickedPos());
+		return super.getStateForPlacement(ctx).setValue(EDGE, edge).setValue(STAIR_SHAPE, shape);
 	}
 
 	@Override
     @SuppressWarnings("deprecation")
-	public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
-		return getStairShape(state.get(EDGE), state.get(STAIR_SHAPE));
+	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+		return getStairShape(state.getValue(EDGE), state.getValue(STAIR_SHAPE));
 	}
 
 	@Override
     @SuppressWarnings("deprecation")
-	public BlockState rotate(BlockState state, BlockRotation rotation) {
-		Edge prev_edge = state.get(EDGE);
+	public BlockState rotate(BlockState state, Rotation rotation) {
+		Edge prev_edge = state.getValue(EDGE);
 		Edge edge = prev_edge.rotate(rotation);
-        if (prev_edge.getAxis() == Direction.Axis.Y) return state.with(EDGE, edge);
+        if (prev_edge.getAxis() == Direction.Axis.Y) return state.setValue(EDGE, edge);
 
-        if (prev_edge.getFace().getDirection() == edge.getFace().getDirection()) // 90° rotations
-            state = state.with(STAIR_SHAPE, state.get(STAIR_SHAPE).mirror());
-        else state = state.with(STAIR_SHAPE, state.get(STAIR_SHAPE).flip());
+        if (prev_edge.getFace().getAxisDirection() == edge.getFace().getAxisDirection()) // 90° rotations
+            state = state.setValue(STAIR_SHAPE, state.getValue(STAIR_SHAPE).mirror());
+        else state = state.setValue(STAIR_SHAPE, state.getValue(STAIR_SHAPE).flip());
 
         if (prev_edge.getAxis() == edge.getAxis()) // 180° rotation
-            state = state.with(STAIR_SHAPE, state.get(STAIR_SHAPE).mirror());
+            state = state.setValue(STAIR_SHAPE, state.getValue(STAIR_SHAPE).mirror());
 
-		return state.with(EDGE, edge);
+		return state.setValue(EDGE, edge);
 	}
 
 	@Override
     @SuppressWarnings("deprecation")
-	public BlockState mirror(BlockState state, BlockMirror mirror) {
-		Edge prev_edge = state.get(EDGE);
+	public BlockState mirror(BlockState state, Mirror mirror) {
+		Edge prev_edge = state.getValue(EDGE);
 		Edge edge = prev_edge.mirror(mirror);
 		return state
-            .with(STAIR_SHAPE, prev_edge == edge ? state.get(STAIR_SHAPE).mirror() : state.get(STAIR_SHAPE).flip())
-            .with(EDGE, edge);
+            .setValue(STAIR_SHAPE, prev_edge == edge ? state.getValue(STAIR_SHAPE).mirror() : state.getValue(STAIR_SHAPE).flip())
+            .setValue(EDGE, edge);
 	}
 
 	public static VoxelShape getStairShape(Edge edge, StairShape shape) {
@@ -125,30 +132,30 @@ public class ReFramedStairBlock extends WaterloggableReFramedBlock {
 
 	@Override
 	public Map<Integer, Integer> getThemeMap(BlockState state, BlockState new_state) {
-		if (new_state.isOf(ReFramed.STAIRS_CUBE)) return Map.of(1, 1);
+		if (new_state.is(ReFramed.STAIRS_CUBE)) return Map.of(1, 1);
 		return super.getThemeMap(state, new_state);
 	}
 
 	static {
-		final VoxelShape STRAIGHT = VoxelShapes.combineAndSimplify(
-			createCuboidShape(0, 8, 0, 16, 16, 8),
-			createCuboidShape(0, 0, 0, 16, 8, 16),
-			BooleanBiFunction.OR
+		final VoxelShape STRAIGHT = Shapes.join(
+			box(0, 8, 0, 16, 16, 8),
+			box(0, 0, 0, 16, 8, 16),
+			BooleanOp.OR
 		);
 		final VoxelShape INNER = Stream.of(
-			createCuboidShape(0, 8, 0, 16, 16, 8),
-			createCuboidShape(0, 8, 8, 8, 16, 16),
-			createCuboidShape(0, 0, 0, 16, 8, 16)
-		).reduce((v1, v2) -> VoxelShapes.combineAndSimplify(v1, v2, BooleanBiFunction.OR)).get();
+			box(0, 8, 0, 16, 16, 8),
+			box(0, 8, 8, 8, 16, 16),
+			box(0, 0, 0, 16, 8, 16)
+		).reduce((v1, v2) -> Shapes.join(v1, v2, BooleanOp.OR)).get();
 		final VoxelShape OUTER = Stream.of(
-			createCuboidShape(0, 8, 0, 8, 16, 8),
-			createCuboidShape(8, 0, 0, 16, 8, 8),
-			createCuboidShape(0, 0, 0, 8, 8, 16)
-		).reduce((v1, v2) -> VoxelShapes.combineAndSimplify(v1, v2, BooleanBiFunction.OR)).get();
-		final VoxelShape JUNCTION = VoxelShapes.combineAndSimplify(
-			createCuboidShape(0, 8, 0, 8, 16, 8),
-			createCuboidShape(0, 0, 0, 16, 8, 16),
-			BooleanBiFunction.OR
+			box(0, 8, 0, 8, 16, 8),
+			box(8, 0, 0, 16, 8, 8),
+			box(0, 0, 0, 8, 8, 16)
+		).reduce((v1, v2) -> Shapes.join(v1, v2, BooleanOp.OR)).get();
+		final VoxelShape JUNCTION = Shapes.join(
+			box(0, 8, 0, 8, 16, 8),
+			box(0, 0, 0, 16, 8, 16),
+			BooleanOp.OR
 		);
 
 		STAIR_VOXELS = VoxelListBuilder.create(STRAIGHT, 108)

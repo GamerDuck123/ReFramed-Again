@@ -1,8 +1,8 @@
 package fr.adrien1106.reframed.client.model;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.client.render.model.UnbakedModel;
-import net.minecraft.util.Identifier;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.resources.model.UnbakedModel;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.Collection;
 import java.util.List;
@@ -10,12 +10,12 @@ import java.util.function.Function;
 
 public abstract class UnbakedRetexturedModel implements UnbakedModel {
 
-    protected final Identifier parent;
+    protected final ResourceLocation parent;
 
     protected int theme_index = 1;
     protected BlockState item_state;
 
-    public UnbakedRetexturedModel(Identifier parent) {
+    public UnbakedRetexturedModel(ResourceLocation parent) {
         this.parent = parent;
     }
 
@@ -25,12 +25,12 @@ public abstract class UnbakedRetexturedModel implements UnbakedModel {
     }
 
     @Override
-    public Collection<Identifier> getModelDependencies() {
+    public Collection<ResourceLocation> getDependencies() {
         return List.of(parent);
     }
 
     @Override
-    public void setParents(Function<Identifier, UnbakedModel> function) {
-        function.apply(parent).setParents(function);
+    public void resolveParents(Function<ResourceLocation, UnbakedModel> function) {
+        function.apply(parent).resolveParents(function);
     }
 }

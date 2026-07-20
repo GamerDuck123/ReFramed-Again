@@ -6,7 +6,7 @@ import fr.adrien1106.reframed.util.mixin.IBlockRenderInfoMixin;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractBlockRenderContext;
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.BlockRenderInfo;
-import net.minecraft.util.math.Direction;
+import net.minecraft.core.Direction;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -25,7 +25,7 @@ public abstract class AbstractBlockRenderContextMixin {
         method = "renderQuad",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/fabricmc/fabric/impl/client/indigo/renderer/render/AbstractBlockRenderContext;isFaceCulled(Lnet/minecraft/util/math/Direction;)Z"
+            target = "Lnet/fabricmc/fabric/impl/client/indigo/renderer/render/AbstractBlockRenderContext;isFaceCulled(Lnet/minecraft/core/Direction;)Z"
         )
     )
     private boolean shouldDrawInnerQuad(AbstractBlockRenderContext instance, Direction face, @Local(argsOnly = true) MutableQuadViewImpl quad) {

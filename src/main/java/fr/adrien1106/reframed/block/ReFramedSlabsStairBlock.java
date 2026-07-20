@@ -2,12 +2,13 @@ package fr.adrien1106.reframed.block;
 
 import fr.adrien1106.reframed.util.blocks.Edge;
 import fr.adrien1106.reframed.util.blocks.StairShape;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.ShapeContext;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.world.BlockView;
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.level.BlockGetter;
 
 import static fr.adrien1106.reframed.block.ReFramedSlabBlock.getSlabShape;
 import static fr.adrien1106.reframed.block.ReFramedStairBlock.getStairShape;
@@ -17,19 +18,19 @@ import static fr.adrien1106.reframed.util.blocks.BlockProperties.EDGE_FACE;
 
 public class ReFramedSlabsStairBlock extends EdgeDoubleReFramedBlock {
 
-    public ReFramedSlabsStairBlock(Settings settings) {
+    public ReFramedSlabsStairBlock(Properties settings) {
         super(settings);
     }
 
     @Override
-    public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
-        return getStairShape(state.get(EDGE), StairShape.STRAIGHT);
+    public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+        return getStairShape(state.getValue(EDGE), StairShape.STRAIGHT);
     }
 
     @Override
     public VoxelShape getShape(BlockState state, int i) {
-        Edge edge = state.get(EDGE);
-        Direction face = edge.getDirection(state.get(EDGE_FACE));
+        Edge edge = state.getValue(EDGE);
+        Direction face = edge.getDirection(state.getValue(EDGE_FACE));
         return i == 2
             ? getStepShape(edge.getOpposite(edge.getOtherDirection(face)))
             : getSlabShape(face);

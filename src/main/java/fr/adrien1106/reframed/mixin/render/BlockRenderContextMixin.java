@@ -10,13 +10,13 @@ import net.fabricmc.fabric.impl.client.indigo.renderer.aocalc.AoCalculator;
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractBlockRenderContext;
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.BlockRenderContext;
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.BlockRenderInfo;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.model.BakedModel;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.BlockRenderView;
+import net.minecraft.world.level.block.state.BlockState;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.resources.model.BakedModel;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.BlockAndTintGetter;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -35,12 +35,12 @@ public abstract class BlockRenderContextMixin extends AbstractBlockRenderContext
         method = "render",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/fabricmc/fabric/impl/client/indigo/renderer/render/BlockRenderInfo;prepareForWorld(Lnet/minecraft/world/BlockRenderView;Z)V",
+            target = "Lnet/fabricmc/fabric/impl/client/indigo/renderer/render/BlockRenderInfo;prepareForWorld(Lnet/minecraft/world/level/BlockAndTintGetter;Z)V",
             shift = At.Shift.AFTER
         ),
         cancellable = true
     )
-    private void renderMultipleModels(BlockRenderView blockView, BakedModel wrapper, BlockState state, BlockPos pos, MatrixStack matrixStack, VertexConsumer buffer, boolean cull, Random random, long seed, int overlay, CallbackInfo ci) {
+    private void renderMultipleModels(BlockAndTintGetter blockView, BakedModel wrapper, BlockState state, BlockPos pos, PoseStack matrixStack, VertexConsumer buffer, boolean cull, RandomSource random, long seed, int overlay, CallbackInfo ci) {
         if (!(wrapper instanceof IMultipartBakedModelMixin wrapped)) return;
         List<BakedModel> models = wrapped.getModels(state);
         if (models.stream().noneMatch(bakedModel ->

@@ -1,3 +1,4 @@
+// TODO(Ravel): Failed to fully resolve file: null cannot be cast to non-null type com.intellij.psi.PsiJavaCodeReferenceElement
 package fr.adrien1106.reframed.mixin.compat;
 
 import fr.adrien1106.reframed.client.ReFramedClient;
@@ -13,14 +14,14 @@ import me.pepperbell.continuity.client.util.RenderUtil;
 import net.fabricmc.fabric.api.renderer.v1.Renderer;
 import net.fabricmc.fabric.api.renderer.v1.mesh.QuadEmitter;
 import net.fabricmc.fabric.api.renderer.v1.model.ForwardingBakedModel;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.render.model.BakedModel;
-import net.minecraft.client.render.model.BakedQuad;
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.BlockRenderView;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.BlockAndTintGetter;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -32,10 +33,10 @@ import java.util.function.Supplier;
 @Mixin(CtmBakedModel.class)
 public abstract class ContinuityCTMBakedModelMixin extends ForwardingBakedModel implements DynamicBakedModel {
 
-    @Shadow protected abstract Function<Sprite, QuadProcessors.Slice> getSliceFunc(BlockState state);
+    @Shadow protected abstract Function<TextureAtlasSprite, QuadProcessors.Slice> getSliceFunc(BlockState state);
 
     @Override
-    public BakedModel computeQuads(@Nullable BlockRenderView level, BlockState origin_state, @Nullable BlockPos pos, int theme_index) {
+    public BakedModel computeQuads(@Nullable BlockAndTintGetter level, BlockState origin_state, @Nullable BlockPos pos, int theme_index) {
         if (wrapped instanceof DynamicBakedModel wrapped_dynamic) // support wrap of dynamic models
             return wrapped_dynamic.computeQuads(level, origin_state, pos, theme_index);
 
@@ -58,9 +59,9 @@ public abstract class ContinuityCTMBakedModelMixin extends ForwardingBakedModel 
             : origin_state;
 
         // get random supplier
-        Random random = Random.create();
-        Supplier<Random> random_supplier = () -> {
-            random.setSeed(state.getRenderingSeed(pos));
+        RandomSource random = RandomSource.create();
+        Supplier<RandomSource> random_supplier = () -> {
+            random.setSeed(state.getSeed(pos));
             return random;
         };
 

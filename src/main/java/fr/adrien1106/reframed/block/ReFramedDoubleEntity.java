@@ -1,20 +1,20 @@
 package fr.adrien1106.reframed.block;
 
 import fr.adrien1106.reframed.ReFramed;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtHelper;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.BlockPos;
 
 import java.util.List;
 import java.util.Objects;
 
 public class ReFramedDoubleEntity extends ReFramedEntity {
 
-    protected BlockState second_state = Blocks.AIR.getDefaultState();
+    protected BlockState second_state = Blocks.AIR.defaultBlockState();
 
     public ReFramedDoubleEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -41,22 +41,22 @@ public class ReFramedDoubleEntity extends ReFramedEntity {
     }
 
     @Override
-    public void readNbt(NbtCompound nbt) {
-        super.readNbt(nbt);
+    public void load(CompoundTag nbt) {
+        super.load(nbt);
 
         BlockState rendered_state = second_state;// keep previous state_key to check if rerender is needed
-        second_state = NbtHelper.toBlockState(Registries.BLOCK.getReadOnlyWrapper(), nbt.getCompound(BLOCKSTATE_KEY + 2));
+        second_state = NbtUtils.readBlockState(BuiltInRegistries.BLOCK.asLookup(), nbt.getCompound(BLOCKSTATE_KEY + 2));
 
         // Force a chunk remesh on the client if the displayed blockstate has changed
-        if(world != null && world.isClient && !Objects.equals(rendered_state, second_state)) {
-            ReFramed.chunkRerenderProxy.accept(world, pos);
+        if(level != null && level.isClientSide && !Objects.equals(rendered_state, second_state)) {
+            ReFramed.chunkRerenderProxy.accept(level, worldPosition);
         }
     }
 
     @Override
-    public void writeNbt(NbtCompound nbt) {
-        super.writeNbt(nbt);
+    public void saveAdditional(CompoundTag nbt) {
+        super.saveAdditional(nbt);
 
-        nbt.put(BLOCKSTATE_KEY + 2, NbtHelper.fromBlockState(second_state));
+        nbt.put(BLOCKSTATE_KEY + 2, NbtUtils.writeBlockState(second_state));
     }
 }

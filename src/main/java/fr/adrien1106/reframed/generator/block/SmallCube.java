@@ -5,38 +5,38 @@ import fr.adrien1106.reframed.generator.BlockStateProvider;
 import fr.adrien1106.reframed.generator.GBlockstate;
 import fr.adrien1106.reframed.generator.RecipeSetter;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricRecipeProvider;
-import net.minecraft.block.Block;
-import net.minecraft.data.client.BlockStateSupplier;
-import net.minecraft.data.client.MultipartBlockStateSupplier;
-import net.minecraft.data.server.recipe.RecipeExporter;
-import net.minecraft.data.server.recipe.RecipeProvider;
-import net.minecraft.data.server.recipe.ShapelessRecipeJsonBuilder;
-import net.minecraft.item.ItemConvertible;
-import net.minecraft.recipe.book.RecipeCategory;
-import net.minecraft.util.Identifier;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.data.models.blockstates.BlockStateGenerator;
+import net.minecraft.data.models.blockstates.MultiPartGenerator;
+import net.minecraft.data.recipes.RecipeOutput;
+import net.minecraft.data.recipes.RecipeProvider;
+import net.minecraft.data.recipes.ShapelessRecipeBuilder;
+import net.minecraft.world.level.ItemLike;
+import net.minecraft.data.recipes.RecipeCategory;
+import net.minecraft.resources.ResourceLocation;
 
 import static fr.adrien1106.reframed.util.blocks.BlockProperties.CORNER;
 import static fr.adrien1106.reframed.util.blocks.Corner.*;
 import static fr.adrien1106.reframed.util.blocks.Corner.NORTH_EAST_UP;
-import static net.minecraft.data.client.VariantSettings.Rotation.*;
+import static net.minecraft.data.models.blockstates.VariantProperties.Rotation.*;
 
 public class SmallCube implements RecipeSetter, BlockStateProvider {
 
     @Override
-    public void setRecipe(RecipeExporter exporter, ItemConvertible convertible) {
-        RecipeProvider.offerStonecuttingRecipe(exporter, RecipeCategory.BUILDING_BLOCKS, convertible, ReFramed.CUBE, 8);
-        ShapelessRecipeJsonBuilder
-            .create(RecipeCategory.BUILDING_BLOCKS, convertible, 8)
-            .input(ReFramed.CUBE)
-            .criterion(FabricRecipeProvider.hasItem(ReFramed.CUBE), FabricRecipeProvider.conditionsFromItem(ReFramed.CUBE))
-            .criterion(FabricRecipeProvider.hasItem(convertible), FabricRecipeProvider.conditionsFromItem(convertible))
-            .offerTo(exporter);
+    public void setRecipe(RecipeOutput exporter, ItemLike convertible) {
+        RecipeProvider.stonecutterResultFromBase(exporter, RecipeCategory.BUILDING_BLOCKS, convertible, ReFramed.CUBE, 8);
+        ShapelessRecipeBuilder
+            .shapeless(RecipeCategory.BUILDING_BLOCKS, convertible, 8)
+            .requires(ReFramed.CUBE)
+            .unlockedBy(FabricRecipeProvider.getHasName(ReFramed.CUBE), FabricRecipeProvider.has(ReFramed.CUBE))
+            .unlockedBy(FabricRecipeProvider.getHasName(convertible), FabricRecipeProvider.has(convertible))
+            .save(exporter);
     }
 
     @Override
-    public BlockStateSupplier getMultipart(Block block) {
-        Identifier small_cube_id = ReFramed.id("small_cube_special");
-        return MultipartBlockStateSupplier.create(block)
+    public BlockStateGenerator getMultipart(Block block) {
+        ResourceLocation small_cube_id = ReFramed.id("small_cube_special");
+        return MultiPartGenerator.multiPart(block)
             .with(GBlockstate.when(CORNER, NORTH_EAST_DOWN),
                 GBlockstate.variant(small_cube_id, true, R0, R0))
             .with(GBlockstate.when(CORNER, EAST_SOUTH_DOWN),

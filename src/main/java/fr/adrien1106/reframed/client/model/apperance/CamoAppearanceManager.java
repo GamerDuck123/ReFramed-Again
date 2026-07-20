@@ -1,3 +1,4 @@
+// TODO(Ravel): Failed to fully resolve file: null cannot be cast to non-null type com.intellij.psi.PsiJavaCodeReferenceElement
 package fr.adrien1106.reframed.client.model.apperance;
 
 import com.google.common.cache.Cache;
@@ -17,21 +18,21 @@ import net.fabricmc.fabric.api.renderer.v1.material.RenderMaterial;
 import net.fabricmc.fabric.api.renderer.v1.mesh.MutableQuadView;
 import net.fabricmc.fabric.api.renderer.v1.mesh.QuadEmitter;
 import net.fabricmc.fabric.api.util.TriState;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.RenderLayers;
-import net.minecraft.client.render.model.BakedModel;
-import net.minecraft.client.render.model.BakedQuad;
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.client.util.SpriteIdentifier;
-import net.minecraft.screen.PlayerScreenHandler;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.collection.Weighted;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.BlockRenderView;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.model.Material;
+import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.random.WeightedEntry;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.BlockAndTintGetter;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -41,12 +42,12 @@ import java.util.function.Function;
 public class CamoAppearanceManager {
 
 
-	protected static final SpriteIdentifier DEFAULT_SPRITE_MAIN = new SpriteIdentifier(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE, new Identifier(ReFramed.MODID, "block/framed_block"));
-	protected static final SpriteIdentifier DEFAULT_SPRITE_SECONDARY = new SpriteIdentifier(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE, new Identifier(ReFramed.MODID, "block/framed_accent_block"));
-	private static final SpriteIdentifier BARRIER_SPRITE_ID = new SpriteIdentifier(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE, new Identifier("minecraft:item/barrier"));
+	protected static final Material DEFAULT_SPRITE_MAIN = new Material(InventoryMenu.BLOCK_ATLAS, new ResourceLocation(ReFramed.MODID, "block/framed_block"));
+	protected static final Material DEFAULT_SPRITE_SECONDARY = new Material(InventoryMenu.BLOCK_ATLAS, new ResourceLocation(ReFramed.MODID, "block/framed_accent_block"));
+	private static final Material BARRIER_SPRITE_ID = new Material(InventoryMenu.BLOCK_ATLAS, new ResourceLocation("minecraft:item/barrier"));
 	private static final Cache<BlockState, CamoAppearance> APPEARANCE_CACHE = CacheBuilder.newBuilder().maximumSize(2048).build();
 
-	public CamoAppearanceManager(Function<SpriteIdentifier, Sprite> spriteLookup) {
+	public CamoAppearanceManager(Function<Material, TextureAtlasSprite> spriteLookup) {
 		MaterialFinder finder = ReFramedClient.HELPER.getFabricRenderer().materialFinder();
 		for(BlendMode blend : BlendMode.values()) {
 			finder.clear().disableDiffuse(false).blendMode(blend);
@@ -55,7 +56,7 @@ public class CamoAppearanceManager {
 			ao_materials.put(blend, finder.ambientOcclusion(TriState.DEFAULT).find()); //not "true" since that *forces* AO, i just want to *allow* AO
 		}
 		
-		Sprite sprite = spriteLookup.apply(DEFAULT_SPRITE_MAIN);
+		TextureAtlasSprite sprite = spriteLookup.apply(DEFAULT_SPRITE_MAIN);
 		if(sprite == null) throw new IllegalStateException("Couldn't locate " + DEFAULT_SPRITE_MAIN + " !");
 		this.default_appearance = new SingleSpriteAppearance(sprite, materials.get(BlendMode.CUTOUT), serial_number.getAndIncrement());
 
@@ -84,8 +85,8 @@ public class CamoAppearanceManager {
 		return appearance == 2 ? accent_appearance: default_appearance;
 	}
 	
-	public CamoAppearance getCamoAppearance(BlockRenderView world, BlockState state, BlockPos pos, int theme_index, boolean item) {
-		BakedModel model = MinecraftClient.getInstance().getBlockRenderManager().getModel(state);
+	public CamoAppearance getCamoAppearance(BlockAndTintGetter world, BlockState state, BlockPos pos, int theme_index, boolean item) {
+		BakedModel model = Minecraft.getInstance().getBlockRenderer().getBlockModel(state);
 
 		// add support for connected textures that uses dynamic baking
 		if (model instanceof DynamicBakedModel dynamic_model) {
@@ -111,7 +112,7 @@ public class CamoAppearanceManager {
 	
 	public RenderMaterial getCachedMaterial(BlockState state, boolean ao) {
 		Map<BlendMode, RenderMaterial> m = ao ? ao_materials : materials;
-		return m.get(BlendMode.fromRenderLayer(RenderLayers.getBlockLayer(state)));
+		return m.get(BlendMode.fromRenderLayer(ItemBlockRenderTypes.getChunkRenderType(state)));
 	}
 	
 	// I'm pretty sure ConcurrentHashMap semantics allow for this function to be called multiple times on the same key, on different threads.
@@ -129,8 +130,8 @@ public class CamoAppearanceManager {
 				is_dynamic ? -1 : serial_number.getAndIncrement()
 			);
 		}
-		List<Weighted.Present<Appearance>> appearances = weighted_model.getModels().stream()
-			.map(baked_model -> Weighted.of(getAppearance(baked_model.getData()), baked_model.getWeight().getValue()))
+		List<WeightedEntry.Wrapper<Appearance>> appearances = weighted_model.getList().stream()
+			.map(baked_model -> WeightedEntry.wrap(getAppearance(baked_model.getData()), baked_model.getWeight().asInt()))
 			.toList();
 
 		return new WeightedComputedAppearance(
@@ -146,7 +147,7 @@ public class CamoAppearanceManager {
 		Renderer r = ReFramedClient.HELPER.getFabricRenderer();
 		QuadEmitter quad_emitter = r.meshBuilder().getEmitter();
 		RenderMaterial material = r.materialFinder().clear().find();
-		Random random = Random.create();
+		RandomSource random = RandomSource.create();
 
 		Map<Direction, List<SpriteProperties>> sprites = new EnumMap<>(Direction.class);
 
@@ -160,7 +161,7 @@ public class CamoAppearanceManager {
 
 			sprites.put(direction, new ArrayList<>());
 			quads.forEach(quad -> {
-				Sprite sprite = quad.getSprite();
+				TextureAtlasSprite sprite = quad.getSprite();
 				if(sprite == null) return;
 				sprites.computeIfPresent(direction, (dir, pairs) -> {
 					quad_emitter.fromVanilla(quad, material, direction);
@@ -168,7 +169,7 @@ public class CamoAppearanceManager {
 						sprite,
 						getBakeFlags(quad_emitter, sprite),
 						QuadPosBounds.read(quad_emitter),
-						quad.hasColor())
+						quad.isTinted())
 					);
 					return pairs;
 				});
@@ -178,7 +179,7 @@ public class CamoAppearanceManager {
 		return new Appearance(sprites, model.useAmbientOcclusion());
 	}
 
-	private static int getBakeFlags(QuadEmitter emitter, Sprite sprite) {
+	private static int getBakeFlags(QuadEmitter emitter, TextureAtlasSprite sprite) {
 		boolean[][] order_matrix = getOrderMatrix(emitter, sprite);
 		int flag = 0;
 		if (!isClockwise(order_matrix)) { // check if quad has been mirrored on model
@@ -216,7 +217,7 @@ public class CamoAppearanceManager {
 		return new_matrix;
 	}
 
-	private static boolean[][] getOrderMatrix(QuadEmitter emitter, Sprite sprite) {
+	private static boolean[][] getOrderMatrix(QuadEmitter emitter, TextureAtlasSprite sprite) {
 		float u_center = (sprite.getMinU() + sprite.getMaxU()) / 2;
 		float v_center = (sprite.getMinV() + sprite.getMaxV()) / 2;
 		boolean[][] order_matrix = new boolean[4][2];

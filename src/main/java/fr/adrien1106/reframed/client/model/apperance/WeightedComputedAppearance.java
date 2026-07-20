@@ -3,29 +3,29 @@ package fr.adrien1106.reframed.client.model.apperance;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.renderer.v1.material.RenderMaterial;
-import net.minecraft.util.collection.Weighted;
-import net.minecraft.util.collection.Weighting;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.random.Random;
+import net.minecraft.util.random.WeightedEntry;
+import net.minecraft.util.random.WeightedRandom;
+import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
 @Environment(EnvType.CLIENT)
 public class WeightedComputedAppearance extends CamoAppearance {
-    private final List<Weighted.Present<Appearance>> appearances;
+    private final List<WeightedEntry.Wrapper<Appearance>> appearances;
     private final int total_weight;
 
-    public WeightedComputedAppearance(@NotNull List<Weighted.Present<Appearance>> appearances, RenderMaterial ao_material, RenderMaterial material, int id) {
+    public WeightedComputedAppearance(@NotNull List<WeightedEntry.Wrapper<Appearance>> appearances, RenderMaterial ao_material, RenderMaterial material, int id) {
         super(ao_material, material, id);
         this.appearances = appearances;
-        this.total_weight = Weighting.getWeightSum(appearances);
+        this.total_weight = WeightedRandom.getTotalWeight(appearances);
     }
 
 
     public int getAppearanceIndex(long seed) {
-        Random random = Random.create(seed);
-        return Weighting.getAt(appearances, Math.abs((int)random.nextLong()) % total_weight)
+        RandomSource random = RandomSource.create(seed);
+        return WeightedRandom.getWeightedItem(appearances, Math.abs((int)random.nextLong()) % total_weight)
             .map(appearances::indexOf).orElse(0);
     }
 

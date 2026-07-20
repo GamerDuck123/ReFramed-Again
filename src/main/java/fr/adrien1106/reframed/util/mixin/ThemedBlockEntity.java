@@ -1,13 +1,13 @@
 package fr.adrien1106.reframed.util.mixin;
 
 import fr.adrien1106.reframed.util.blocks.ThemeableBlockEntity;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtHelper;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.BlockPos;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,12 +18,12 @@ public class ThemedBlockEntity extends BlockEntity implements ThemeableBlockEnti
     private final List<BlockState> themes;
     private final boolean isSolid;
 
-    public ThemedBlockEntity(NbtCompound compound, BlockPos pos, BlockState state) {
+    public ThemedBlockEntity(CompoundTag compound, BlockPos pos, BlockState state) {
         super(null, pos, state);
         themes = new ArrayList<>();
         for (int i = 1; compound.contains(BLOCKSTATE_KEY + i ); i++) {
-            themes.add(NbtHelper.toBlockState(
-                Registries.BLOCK.getReadOnlyWrapper(),
+            themes.add(NbtUtils.readBlockState(
+                BuiltInRegistries.BLOCK.asLookup(),
                 compound.getCompound(BLOCKSTATE_KEY + i)
             ));
         }
@@ -33,7 +33,7 @@ public class ThemedBlockEntity extends BlockEntity implements ThemeableBlockEnti
     @Override
     public BlockState getTheme(int i) {
         if (i > themes.size())
-            return Blocks.AIR.getDefaultState();
+            return Blocks.AIR.defaultBlockState();
         return themes.get(Math.max(0, i-1));
     }
 

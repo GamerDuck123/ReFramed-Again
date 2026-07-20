@@ -10,10 +10,10 @@ import net.fabricmc.fabric.impl.client.indigo.renderer.aocalc.AoCalculator;
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractBlockRenderContext;
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.BlockRenderInfo;
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.TerrainRenderContext;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.render.model.BakedModel;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.resources.model.BakedModel;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.core.BlockPos;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -30,7 +30,7 @@ public abstract class TerrainRenderContextMixin extends AbstractBlockRenderConte
             target = "Lnet/fabricmc/fabric/impl/client/indigo/renderer/aocalc/AoCalculator;clear()V"
         ), remap = false,
         cancellable = true)
-    private void renderMultipleModels(BlockState state, BlockPos pos, BakedModel wrapper, MatrixStack matrixStack, CallbackInfo ci) {
+    private void renderMultipleModels(BlockState state, BlockPos pos, BakedModel wrapper, PoseStack matrixStack, CallbackInfo ci) {
         if (!(wrapper instanceof IMultipartBakedModelMixin wrapped)) return;
         List<BakedModel> models = wrapped.getModels(state);
         if (models.stream().noneMatch(bakedModel ->

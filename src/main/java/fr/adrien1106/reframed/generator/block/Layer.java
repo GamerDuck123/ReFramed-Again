@@ -5,40 +5,40 @@ import fr.adrien1106.reframed.generator.BlockStateProvider;
 import fr.adrien1106.reframed.generator.GBlockstate;
 import fr.adrien1106.reframed.generator.RecipeSetter;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricRecipeProvider;
-import net.minecraft.block.Block;
-import net.minecraft.data.client.MultipartBlockStateSupplier;
-import net.minecraft.data.server.recipe.RecipeExporter;
-import net.minecraft.data.server.recipe.RecipeProvider;
-import net.minecraft.data.server.recipe.ShapedRecipeJsonBuilder;
-import net.minecraft.item.ItemConvertible;
-import net.minecraft.recipe.book.RecipeCategory;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Direction;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.data.models.blockstates.MultiPartGenerator;
+import net.minecraft.data.recipes.RecipeOutput;
+import net.minecraft.data.recipes.RecipeProvider;
+import net.minecraft.data.recipes.ShapedRecipeBuilder;
+import net.minecraft.world.level.ItemLike;
+import net.minecraft.data.recipes.RecipeCategory;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Direction;
 
-import static net.minecraft.data.client.VariantSettings.Rotation.*;
-import static net.minecraft.state.property.Properties.FACING;
-import static net.minecraft.state.property.Properties.LAYERS;
+import static net.minecraft.data.models.blockstates.VariantProperties.Rotation.*;
+import static net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING;
+import static net.minecraft.world.level.block.state.properties.BlockStateProperties.LAYERS;
 
 public class Layer implements RecipeSetter, BlockStateProvider {
 
     @Override
-    public void setRecipe(RecipeExporter exporter, ItemConvertible convertible) {
-        RecipeProvider.offerStonecuttingRecipe(exporter, RecipeCategory.BUILDING_BLOCKS, convertible, ReFramed.CUBE, 8);
-        ShapedRecipeJsonBuilder
-            .create(RecipeCategory.BUILDING_BLOCKS, convertible, 16)
+    public void setRecipe(RecipeOutput exporter, ItemLike convertible) {
+        RecipeProvider.stonecutterResultFromBase(exporter, RecipeCategory.BUILDING_BLOCKS, convertible, ReFramed.CUBE, 8);
+        ShapedRecipeBuilder
+            .shaped(RecipeCategory.BUILDING_BLOCKS, convertible, 16)
             .pattern("II")
-            .input('I', ReFramed.CUBE)
-            .criterion(FabricRecipeProvider.hasItem(ReFramed.CUBE), FabricRecipeProvider.conditionsFromItem(ReFramed.CUBE))
-            .criterion(FabricRecipeProvider.hasItem(convertible), FabricRecipeProvider.conditionsFromItem(convertible))
-            .offerTo(exporter);
+            .define('I', ReFramed.CUBE)
+            .unlockedBy(FabricRecipeProvider.getHasName(ReFramed.CUBE), FabricRecipeProvider.has(ReFramed.CUBE))
+            .unlockedBy(FabricRecipeProvider.getHasName(convertible), FabricRecipeProvider.has(convertible))
+            .save(exporter);
     }
 
     @Override
-    public MultipartBlockStateSupplier getMultipart(Block block) {
+    public MultiPartGenerator getMultipart(Block block) {
         String model_pattern = "layer_x_special";
-        MultipartBlockStateSupplier supplier = MultipartBlockStateSupplier.create(block);
+        MultiPartGenerator supplier = MultiPartGenerator.multiPart(block);
         for (int i = 1; i <= 8; i++) {
-            Identifier model = ReFramed.id(model_pattern.replace("x", i + ""));
+            ResourceLocation model = ReFramed.id(model_pattern.replace("x", i + ""));
             supplier
                 .with(GBlockstate.when(FACING, Direction.DOWN, LAYERS, i),
                     GBlockstate.variant(model, true, R0, R0))

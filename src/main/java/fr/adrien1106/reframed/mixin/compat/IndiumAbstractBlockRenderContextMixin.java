@@ -6,7 +6,7 @@ import fr.adrien1106.reframed.util.mixin.IBlockRenderInfoMixin;
 import link.infra.indium.renderer.mesh.MutableQuadViewImpl;
 import link.infra.indium.renderer.render.AbstractBlockRenderContext;
 import link.infra.indium.renderer.render.BlockRenderInfo;
-import net.minecraft.util.math.Direction;
+import net.minecraft.core.Direction;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -20,7 +20,7 @@ public abstract class IndiumAbstractBlockRenderContextMixin {
 
     @Shadow public abstract boolean isFaceCulled(@Nullable Direction face);
 
-    @Redirect(method = "renderQuad", at = @At(value = "INVOKE", target = "Llink/infra/indium/renderer/render/AbstractBlockRenderContext;isFaceCulled(Lnet/minecraft/util/math/Direction;)Z"))
+    @Redirect(method = "renderQuad", at = @At(value = "INVOKE", target = "Llink/infra/indium/renderer/render/AbstractBlockRenderContext;isFaceCulled(Lnet/minecraft/core/Direction;)Z"))
     private boolean shouldDrawInnerQuad(AbstractBlockRenderContext instance, Direction face, @Local(argsOnly = true) MutableQuadViewImpl quad) {
         if (face != null || quad.tag() == 0 || !(blockInfo instanceof IBlockRenderInfoMixin info) || info.getThemeIndex() == 0) return isFaceCulled(face);
 

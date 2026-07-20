@@ -2,29 +2,30 @@ package fr.adrien1106.reframed.item;
 
 import fr.adrien1106.reframed.ReFramed;
 import fr.adrien1106.reframed.block.ReFramedEntity;
-import net.minecraft.block.AbstractBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.item.TooltipContext;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUsageContext;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtHelper;
-import net.minecraft.registry.Registries;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Hand;
-import net.minecraft.util.TypedActionResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.item.Item.Properties;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.ChatFormatting;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -34,85 +35,85 @@ import java.util.stream.Collectors;
 import static fr.adrien1106.reframed.block.ReFramedEntity.BLOCKSTATE_KEY;
 
 public class ReFramedBlueprintWrittenItem extends Item {
-    public ReFramedBlueprintWrittenItem(Settings settings) {
+    public ReFramedBlueprintWrittenItem(Properties settings) {
         super(settings);
     }
 
     @Override
-    public TypedActionResult<ItemStack> use(World world, PlayerEntity player, Hand hand) {
-        ItemStack stack = player.getStackInHand(hand);
-        if (!player.isSneaking() || !stack.hasNbt()) return super.use(world, player, hand);
-        stack.decrement(1);
-        player.giveItemStack(ReFramed.BLUEPRINT.getDefaultStack());
-        world.playSound(player, player.getBlockPos(), SoundEvents.ITEM_BOOK_PUT, SoundCategory.PLAYERS);
+    public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
+        if (!player.isShiftKeyDown() || !stack.hasTag()) return super.use(world, player, hand);
+        stack.shrink(1);
+        player.addItem(ReFramed.BLUEPRINT.getDefaultInstance());
+        world.playSound(player, player.blockPosition(), SoundEvents.BOOK_PUT, SoundSource.PLAYERS);
 
-        return TypedActionResult.success(stack);
+        return InteractionResultHolder.success(stack);
     }
 
     @Override
-    public ActionResult useOnBlock(ItemUsageContext context) {
-        BlockPos pos = context.getBlockPos();
-        World world = context.getWorld();
+    public InteractionResult useOn(UseOnContext context) {
+        BlockPos pos = context.getClickedPos();
+        Level world = context.getLevel();
         if (!(world.getBlockEntity(pos) instanceof ReFramedEntity frame_entity)
             || frame_entity.getThemes().stream().anyMatch(state -> state.getBlock() != Blocks.AIR)
-            || !context.getStack().hasNbt()
-        ) return ActionResult.PASS;
+            || !context.getItemInHand().hasTag()
+        ) return InteractionResult.PASS;
 
-        NbtCompound tag = BlockItem.getBlockEntityNbt(context.getStack());
-        if(tag == null) return ActionResult.FAIL;
+        CompoundTag tag = BlockItem.getBlockEntityData(context.getItemInHand());
+        if(tag == null) return InteractionResult.FAIL;
 
-        PlayerEntity player = context.getPlayer();
+        Player player = context.getPlayer();
         if (!player.isCreative()) { // verify player has blocks and remove them
-            PlayerInventory inventory = player.getInventory();
+            Inventory inventory = player.getInventory();
             List<ItemStack> stacks = getBlockStates(tag).values().stream()
-                .map(AbstractBlock.AbstractBlockState::getBlock)
+                .map(BlockBehaviour.BlockStateBase::getBlock)
                 .map(Block::asItem)
-                .map(Item::getDefaultStack)
+                .map(Item::getDefaultInstance)
                 .toList();
             if (stacks.stream().anyMatch(stack -> !inventory.contains(stack)))
-                return ActionResult.FAIL;
-            stacks.stream().map(inventory::getSlotWithStack).forEach(index -> inventory.removeStack(index, 1));
-            player.playSound(SoundEvents.ENTITY_ITEM_PICKUP, 0.5f, 0.5f);
+                return InteractionResult.FAIL;
+            stacks.stream().map(inventory::findSlotMatchingItem).forEach(index -> inventory.removeItem(index, 1));
+            player.playSound(SoundEvents.ITEM_PICKUP, 0.5f, 0.5f);
         }
         for (int i = 1; tag.contains(BLOCKSTATE_KEY + i); i++) {
-            BlockState state = NbtHelper.toBlockState(
-                Registries.BLOCK.getReadOnlyWrapper(),
+            BlockState state = NbtUtils.readBlockState(
+                BuiltInRegistries.BLOCK.asLookup(),
                 tag.getCompound(BLOCKSTATE_KEY + i)
             );
             frame_entity.setTheme(state, i);
         }
-        if (world.isClient) ReFramed.chunkRerenderProxy.accept(world, pos);
-        world.playSound(player, player.getBlockPos(), SoundEvents.ITEM_BOOK_PAGE_TURN, SoundCategory.PLAYERS);
+        if (world.isClientSide) ReFramed.chunkRerenderProxy.accept(world, pos);
+        world.playSound(player, player.blockPosition(), SoundEvents.BOOK_PAGE_TURN, SoundSource.PLAYERS);
 
-        return ActionResult.SUCCESS;
+        return InteractionResult.SUCCESS;
     }
 
     @Override
-    public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
-        NbtCompound tag = BlockItem.getBlockEntityNbt(stack);
+    public void appendHoverText(ItemStack stack, @Nullable Level world, List<Component> tooltip, TooltipFlag context) {
+        CompoundTag tag = BlockItem.getBlockEntityData(stack);
         if(tag == null) return;
 
         Map<Integer, BlockState> states = getBlockStates(tag);
         states.forEach((index, state) -> tooltip.add(
-            Text.literal("Theme " + index + ": ")
+            Component.literal("Theme " + index + ": ")
                 .append(
-                    Text.translatable(state.getBlock().getTranslationKey())
-                        .formatted(Formatting.GRAY)
+                    Component.translatable(state.getBlock().getDescriptionId())
+                        .withStyle(ChatFormatting.GRAY)
                 )
         ));
-        super.appendTooltip(stack, world, tooltip, context);
+        super.appendHoverText(stack, world, tooltip, context);
     }
 
-    private static Map<Integer, BlockState> getBlockStates(NbtCompound tag) {
-        return tag.getKeys().stream()
+    private static Map<Integer, BlockState> getBlockStates(CompoundTag tag) {
+        return tag.getAllKeys().stream()
             .filter(key ->
                 key.startsWith(BLOCKSTATE_KEY)
                 && key.replace(BLOCKSTATE_KEY,"").chars().allMatch(Character::isDigit)
             )
             .collect(Collectors.toMap(
                 key -> Integer.parseInt(key.substring(BLOCKSTATE_KEY.length())),
-                key -> NbtHelper.toBlockState(
-                    Registries.BLOCK.getReadOnlyWrapper(),
+                key -> NbtUtils.readBlockState(
+                    BuiltInRegistries.BLOCK.asLookup(),
                     tag.getCompound(key)
                 )
             ));

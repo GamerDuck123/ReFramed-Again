@@ -7,18 +7,22 @@ import fr.adrien1106.reframed.item.ReFramedBlueprintWrittenItem;
 import fr.adrien1106.reframed.item.ReFramedScrewdriverItem;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
-import net.minecraft.block.AbstractBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.item.*;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.sound.BlockSoundGroup;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.Registry;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 
 import java.util.ArrayList;
 import java.util.function.BiConsumer;
@@ -53,12 +57,12 @@ public class ReFramed implements ModInitializer {
 	public static final ArrayList<Item> ITEMS = new ArrayList<>();
 	public static Item HAMMER, SCREWDRIVER, BLUEPRINT, BLUEPRINT_WRITTEN;
 
-	public static ItemGroup ITEM_GROUP;
+	public static CreativeModeTab ITEM_GROUP;
 
 	public static BlockEntityType<ReFramedEntity> REFRAMED_BLOCK_ENTITY;
 	public static BlockEntityType<ReFramedDoubleEntity> REFRAMED_DOUBLE_BLOCK_ENTITY;
 
-	public static BiConsumer<World, BlockPos> chunkRerenderProxy = (world, pos) -> {};
+	public static BiConsumer<Level, BlockPos> chunkRerenderProxy = (world, pos) -> {};
 	
 	@Override
 	public void onInitialize() {
@@ -98,67 +102,67 @@ public class ReFramed implements ModInitializer {
         FENCE                   = registerBlock("fence"                  , new ReFramedFenceBlock(cp(Blocks.OAK_FENCE)));
         POST_FENCE              = registerBlock("post_fence"             , new ReFramedPostFenceBlock(cp(Blocks.OAK_FENCE)));
 
-		HAMMER                  = registerItem("hammer"                  , new ReFramedHammerItem(new Item.Settings().maxCount(1)));
-		SCREWDRIVER             = registerItem("screwdriver"             , new ReFramedScrewdriverItem(new Item.Settings().maxCount(1)));
-		BLUEPRINT               = registerItem("blueprint"               , new ReFramedBlueprintItem(new Item.Settings()));
-		BLUEPRINT_WRITTEN       = registerItem("blueprint_written"       , new ReFramedBlueprintWrittenItem(new Item.Settings().maxCount(1)));
+		HAMMER                  = registerItem("hammer"                  , new ReFramedHammerItem(new Item.Properties().stacksTo(1)));
+		SCREWDRIVER             = registerItem("screwdriver"             , new ReFramedScrewdriverItem(new Item.Properties().stacksTo(1)));
+		BLUEPRINT               = registerItem("blueprint"               , new ReFramedBlueprintItem(new Item.Properties()));
+		BLUEPRINT_WRITTEN       = registerItem("blueprint_written"       , new ReFramedBlueprintWrittenItem(new Item.Properties().stacksTo(1)));
 
 
-		REFRAMED_BLOCK_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, id("camo"),
-            BlockEntityType.Builder.create(
+		REFRAMED_BLOCK_ENTITY = Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, id("camo"),
+            BlockEntityType.Builder.of(
 				(pos, state) -> new ReFramedEntity(REFRAMED_BLOCK_ENTITY, pos, state),
 				BLOCKS.stream()
 					.filter(block -> !(block instanceof ReFramedDoubleBlock))
 					.toArray(Block[]::new)).build(null)
 		);
 
-		REFRAMED_DOUBLE_BLOCK_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, id("double_camo"),
-			BlockEntityType.Builder.create(
+		REFRAMED_DOUBLE_BLOCK_ENTITY = Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, id("double_camo"),
+			BlockEntityType.Builder.of(
 				(pos, state) -> new ReFramedDoubleEntity(REFRAMED_DOUBLE_BLOCK_ENTITY, pos, state),
 				BLOCKS.stream()
 					.filter(block -> block instanceof ReFramedDoubleBlock)
 					.toArray(Block[]::new)).build(null)
 		);
 
-		ITEM_GROUP = Registry.register(Registries.ITEM_GROUP, id("tab"), FabricItemGroup.builder()
-			.displayName(Text.translatable("itemGroup.reframed.tab"))
+		ITEM_GROUP = Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, id("tab"), FabricItemGroup.builder()
+			.title(Component.translatable("itemGroup.reframed.tab"))
 			.icon(() -> new ItemStack(SLAB))
-			.entries((ctx, e) -> e.addAll(
+			.displayItems((ctx, e) -> e.acceptAll(
 				Stream.concat(
 					ITEMS.stream().filter(item -> item != BLUEPRINT_WRITTEN),
 					BLOCKS.stream().map(Block::asItem)
-				).map(Item::getDefaultStack).toList())
+				).map(Item::getDefaultInstance).toList())
 			).build()
 		);
 	}
 
-	private static AbstractBlock.Settings cp(Block base) {
-		return AbstractBlock.Settings.copy(base)
-			.luminance(state -> state.contains(LIGHT) && state.get(LIGHT) ? 15 : 0)
-			.sounds(BlockSoundGroup.WOOD)
-			.hardness(0.2f)
-			.suffocates(Blocks::never)
-			.solidBlock(Blocks::always);
+	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties cp(Block base) {
+		return net.minecraft.world.level.block.state.BlockBehaviour.Properties.ofFullCopy(base)
+			.lightLevel(state -> state.hasProperty(LIGHT) && state.getValue(LIGHT) ? 15 : 0)
+			.sound(SoundType.WOOD)
+			.destroyTime(0.2f)
+			.isSuffocating(Blocks::never)
+			.isRedstoneConductor(Blocks::always);
 //			.blockVision(Blocks::always);
 	}
 
 	private static <I extends Item> I registerItem(String path, I item) {
-		Identifier id = id(path);
-		Registry.register(Registries.ITEM, id, item);
+		ResourceLocation id = id(path);
+		Registry.register(BuiltInRegistries.ITEM, id, item);
 		ITEMS.add(item);
 		return item;
 	}
 	
 	private static <B extends Block> B registerBlock(String path, B block) {
-		Identifier id = id(path);
+		ResourceLocation id = id(path);
 		
-		Registry.register(Registries.BLOCK, id, block);
-		Registry.register(Registries.ITEM, id, new BlockItem(block, new Item.Settings()));
+		Registry.register(BuiltInRegistries.BLOCK, id, block);
+		Registry.register(BuiltInRegistries.ITEM, id, new BlockItem(block, new Item.Properties()));
 		BLOCKS.add(block);
 		return block;
 	}
 
-	public static Identifier id(String path) {
-		return new Identifier(MODID, path);
+	public static ResourceLocation id(String path) {
+		return new ResourceLocation(MODID, path);
 	}
 }

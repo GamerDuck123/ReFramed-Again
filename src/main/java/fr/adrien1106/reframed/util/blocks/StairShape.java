@@ -1,10 +1,10 @@
 package fr.adrien1106.reframed.util.blocks;
 
-import net.minecraft.util.StringIdentifiable;
+import net.minecraft.util.StringRepresentable;
 
 import java.util.Arrays;
 
-public enum StairShape implements StringIdentifiable {
+public enum StairShape implements StringRepresentable {
     STRAIGHT("straight", 0),
     INNER_RIGHT("inner_right", 1),
     INNER_LEFT("inner_left", 2),
@@ -24,12 +24,12 @@ public enum StairShape implements StringIdentifiable {
         this.ID = id;
     }
 
-    public String asString() {
+    public String getSerializedName() {
         return this.name;
     }
 
     public String toString() {
-        return asString();
+        return getSerializedName();
     }
 
     public int getID() {

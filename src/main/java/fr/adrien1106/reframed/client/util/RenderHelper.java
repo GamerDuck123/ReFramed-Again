@@ -12,21 +12,21 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.renderer.v1.Renderer;
 import net.fabricmc.fabric.api.renderer.v1.material.RenderMaterial;
 import net.fabricmc.fabric.api.renderer.v1.mesh.QuadEmitter;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.util.function.BooleanBiFunction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.util.shape.VoxelShapes;
-import net.minecraft.world.BlockRenderView;
-import net.minecraft.world.BlockView;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.BooleanOp;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.BlockGetter;
 
 import java.util.List;
 import java.util.Objects;
 
-import static net.minecraft.util.shape.VoxelShapes.combine;
+import static net.minecraft.world.phys.shapes.Shapes.joinUnoptimized;
 
 @Environment(EnvType.CLIENT)
 public class RenderHelper {
@@ -48,7 +48,7 @@ public class RenderHelper {
         Renderer r = ReFramedClient.HELPER.getFabricRenderer();
         QuadEmitter quad_emitter = r.meshBuilder().getEmitter();
         RenderMaterial material = r.materialFinder().clear().find();
-        Random random = Random.create();
+        RandomSource random = RandomSource.create();
 
         List<List<QuadPosBounds>> model_bounds = models.stream()
             .map(wrapped -> wrapped.getQuads(state, null, random))
@@ -75,7 +75,7 @@ public class RenderHelper {
         }
     }
 
-    public static boolean shouldDrawInnerFace(BlockState state, BlockRenderView view, BlockPos pos, int quad_index, int theme_index, int hash) {
+    public static boolean shouldDrawInnerFace(BlockState state, BlockAndTintGetter view, BlockPos pos, int quad_index, int theme_index, int hash) {
         if (!(state.getBlock() instanceof ReFramedBlock frame_block)
             || !(view.getBlockEntity(pos) instanceof ThemeableBlockEntity frame_entity)
         ) return true;
@@ -90,15 +90,15 @@ public class RenderHelper {
         BlockState other_theme = frame_entity.getTheme(cull_theme);
 
         try {
-            if (self_theme.isSideInvisible(other_theme, null)) return false;
+            if (self_theme.skipRendering(other_theme, null)) return false;
         } catch (NullPointerException e) { // this can happen if mod haven't thought about inner faces
             return true;
         }
-        return self_theme.isOpaque() != other_theme.isOpaque() && self_theme.isOpaque();
+        return self_theme.canOcclude() != other_theme.canOcclude() && self_theme.canOcclude();
     }
 
     // Doing this method from scratch as it is simpler to do than injecting everywhere
-    public static boolean shouldDrawSide(BlockState self_state, BlockView world, BlockPos pos, Direction side, BlockPos other_pos, int theme_index) {
+    public static boolean shouldDrawSide(BlockState self_state, BlockGetter world, BlockPos pos, Direction side, BlockPos other_pos, int theme_index) {
         BlockState other_state = world.getBlockState(other_pos);
         ThemeableBlockEntity self = world.getBlockEntity(pos) instanceof ThemeableBlockEntity e
             && self_state.getBlock() instanceof ReFramedBlock
@@ -109,46 +109,46 @@ public class RenderHelper {
 
         // normal behaviour
         if ((theme_index == 0 && self != null) || (self == null && other == null))
-            return Block.shouldDrawSide(self_state, world, pos, side, other_pos);
+            return Block.shouldRenderFace(self_state, world, pos, side, other_pos);
 
         // self is a normal Block
         if (self == null && other_state.getBlock() instanceof ReFramedBlock other_block) {
-            VoxelShape self_shape = self_state.getCullingShape(world, pos);
+            VoxelShape self_shape = self_state.getOcclusionShape(world, pos);
             if (self_shape.isEmpty()) return true;
 
             int i = 0;
-            VoxelShape other_shape = VoxelShapes.empty();
+            VoxelShape other_shape = Shapes.empty();
             for (BlockState s: other.getThemes()) {
                 i++;
-                if (self_state.isSideInvisible(s, side) || (s.isOpaque() && (other.isSolid() || self_state.isTransparent(world ,pos))))
-                    other_shape = combine(
+                if (self_state.skipRendering(s, side) || (s.canOcclude() && (other.isSolid() || self_state.propagatesSkylightDown(world ,pos))))
+                    other_shape = joinUnoptimized(
                         other_shape,
                         other_block
                             .getShape(other_state, i)
-                            .getFace(side.getOpposite()),
-                        BooleanBiFunction.OR
+                            .getFaceShape(side.getOpposite()),
+                        BooleanOp.OR
                     );
             }
 
             // determine if side needs to be rendered
-            return VoxelShapes.matchesAnywhere(self_shape, other_shape, BooleanBiFunction.ONLY_FIRST);
+            return Shapes.joinIsNotEmpty(self_shape, other_shape, BooleanOp.ONLY_FIRST);
         }
 
         BlockState self_theme = self.getTheme(theme_index);
         // other is normal Block
         if (other == null && self_state.getBlock() instanceof ReFramedBlock self_block) {
             // Transparent is simple if self and the neighbor are invisible don't render side (like default)
-            if (self_theme.isSideInvisible(other_state, side)) return false;
+            if (self_theme.skipRendering(other_state, side)) return false;
 
             // Opaque is also simple as each model are rendered one by one
-            if (other_state.isOpaque()) {
+            if (other_state.canOcclude()) {
                 // no cache section :( because it differs between each instance of the frame
-                VoxelShape self_shape = self_block.getShape(self_state, theme_index).getFace(side);
+                VoxelShape self_shape = self_block.getShape(self_state, theme_index).getFaceShape(side);
                 if (self_shape.isEmpty()) return true;
-                VoxelShape other_shape = other_state.getCullingFace(world, other_pos, side.getOpposite());
+                VoxelShape other_shape = other_state.getFaceOcclusionShape(world, other_pos, side.getOpposite());
 
                 // determine if side needs to be rendered
-                return VoxelShapes.matchesAnywhere(self_shape, other_shape, BooleanBiFunction.ONLY_FIRST);
+                return Shapes.joinIsNotEmpty(self_shape, other_shape, BooleanOp.ONLY_FIRST);
             }
 
             return true;
@@ -157,25 +157,25 @@ public class RenderHelper {
         // Both are frames
         // here both are computed in the same zone as there will necessarily a shape comparison
         if (self_state.getBlock() instanceof ReFramedBlock self_block && other_state.getBlock() instanceof ReFramedBlock other_block) {
-            VoxelShape self_shape = self_block.getShape(self_state, theme_index).getFace(side);
+            VoxelShape self_shape = self_block.getShape(self_state, theme_index).getFaceShape(side);
             if (self_shape.isEmpty()) return true;
 
             int i = 0;
-            VoxelShape other_shape = VoxelShapes.empty();
+            VoxelShape other_shape = Shapes.empty();
             for (BlockState s: other.getThemes()) {
                 i++;
-                if (self_theme.isSideInvisible(s, side) || (s.isOpaque() && (!self.isSolid() || (other.isSolid() == self.isSolid()))))
-                    other_shape = combine(
+                if (self_theme.skipRendering(s, side) || (s.canOcclude() && (!self.isSolid() || (other.isSolid() == self.isSolid()))))
+                    other_shape = joinUnoptimized(
                         other_shape,
                         other_block
                             .getShape(other_state, i)
-                            .getFace(side.getOpposite()),
-                        BooleanBiFunction.OR
+                            .getFaceShape(side.getOpposite()),
+                        BooleanOp.OR
                     );
             }
 
             // determine if side needs to be rendered
-            return VoxelShapes.matchesAnywhere(self_shape, other_shape, BooleanBiFunction.ONLY_FIRST);
+            return Shapes.joinIsNotEmpty(self_shape, other_shape, BooleanOp.ONLY_FIRST);
         }
 
         return true;

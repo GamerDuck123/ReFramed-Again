@@ -2,78 +2,79 @@ package fr.adrien1106.reframed.block;
 
 import fr.adrien1106.reframed.ReFramed;
 import fr.adrien1106.reframed.util.VoxelHelper;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.ShapeContext;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.loot.context.LootContextParameterSet;
-import net.minecraft.state.StateManager;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.world.BlockView;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.level.BlockGetter;
 
 import java.util.List;
 
 import static fr.adrien1106.reframed.block.ReFramedLayerBlock.getLayerShape;
 import static fr.adrien1106.reframed.block.ReFramedSlabBlock.getSlabShape;
 import static fr.adrien1106.reframed.util.blocks.BlockProperties.HALF_LAYERS;
-import static net.minecraft.state.property.Properties.FACING;
+import static net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING;
 
 public class ReFramedSlabsLayerBlock extends FacingDoubleReFramedBlock {
 
     public static VoxelShape[] HALF_LAYER_SHAPES;
 
-    public ReFramedSlabsLayerBlock(Settings settings) {
+    public ReFramedSlabsLayerBlock(Properties settings) {
         super(settings);
-        setDefaultState(getDefaultState().with(HALF_LAYERS, 1));
+        registerDefaultState(defaultBlockState().setValue(HALF_LAYERS, 1));
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public List<ItemStack> getDroppedStacks(BlockState state, LootContextParameterSet.Builder builder) {
-        List<ItemStack> drops = super.getDroppedStacks(state, builder);
-        if (state.get(HALF_LAYERS) > 1)
-            drops.add(new ItemStack(ReFramed.LAYER, state.get(HALF_LAYERS)-1));
+    public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+        List<ItemStack> drops = super.getDrops(state, builder);
+        if (state.getValue(HALF_LAYERS) > 1)
+            drops.add(new ItemStack(ReFramed.LAYER, state.getValue(HALF_LAYERS)-1));
         return drops;
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public boolean canReplace(BlockState state, ItemPlacementContext context) {
+    public boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
         if (context.getPlayer() == null
-            || context.getPlayer().isSneaking()
-            || !(context.getStack().getItem() instanceof BlockItem block_item)
+            || context.getPlayer().isShiftKeyDown()
+            || !(context.getItemInHand().getItem() instanceof BlockItem block_item)
         ) return false;
 
-        return block_item.getBlock() == ReFramed.LAYER && state.get(HALF_LAYERS) < 4;
+        return block_item.getBlock() == ReFramed.LAYER && state.getValue(HALF_LAYERS) < 4;
     }
 
     @Override
-    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
-        super.appendProperties(builder.add(HALF_LAYERS));
+    protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder builder) {
+        super.createBlockStateDefinition(builder.add(HALF_LAYERS));
     }
 
     @Override
-    public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
-        return getLayerShape(state.get(FACING), state.get(HALF_LAYERS) + 4);
+    public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+        return getLayerShape(state.getValue(FACING), state.getValue(HALF_LAYERS) + 4);
     }
 
     @Override
     public VoxelShape getShape(BlockState state, int i) {
-        Direction face = state.get(FACING);
+        Direction face = state.getValue(FACING);
         return i == 2
-            ? HALF_LAYER_SHAPES[face.getId() * 4 + state.get(HALF_LAYERS)-1]
+            ? HALF_LAYER_SHAPES[face.get3DDataValue() * 4 + state.getValue(HALF_LAYERS)-1]
             : getSlabShape(face);
     }
 
     static {
-        VoxelHelper.VoxelListBuilder builder = VoxelHelper.VoxelListBuilder.create(createCuboidShape(0, 8, 0, 16, 10, 16), 24)
-            .add(createCuboidShape(0, 8, 0, 16, 12, 16))
-            .add(createCuboidShape(0, 8, 0, 16, 14, 16))
-            .add(createCuboidShape(0, 8, 0, 16, 16, 16));
+        VoxelHelper.VoxelListBuilder builder = VoxelHelper.VoxelListBuilder.create(box(0, 8, 0, 16, 10, 16), 24)
+            .add(box(0, 8, 0, 16, 12, 16))
+            .add(box(0, 8, 0, 16, 14, 16))
+            .add(box(0, 8, 0, 16, 16, 16));
 
         for (int i = 0; i < 4; i++) {
             builder.add(i, VoxelHelper::mirrorY);

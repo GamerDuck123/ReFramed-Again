@@ -5,48 +5,48 @@ import fr.adrien1106.reframed.generator.BlockStateProvider;
 import fr.adrien1106.reframed.generator.GBlockstate;
 import fr.adrien1106.reframed.generator.RecipeSetter;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricRecipeProvider;
-import net.minecraft.block.Block;
-import net.minecraft.data.client.BlockStateSupplier;
-import net.minecraft.data.client.MultipartBlockStateSupplier;
-import net.minecraft.data.server.recipe.RecipeExporter;
-import net.minecraft.data.server.recipe.RecipeProvider;
-import net.minecraft.data.server.recipe.ShapedRecipeJsonBuilder;
-import net.minecraft.item.ItemConvertible;
-import net.minecraft.recipe.book.RecipeCategory;
-import net.minecraft.util.Identifier;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.data.models.blockstates.BlockStateGenerator;
+import net.minecraft.data.models.blockstates.MultiPartGenerator;
+import net.minecraft.data.recipes.RecipeOutput;
+import net.minecraft.data.recipes.RecipeProvider;
+import net.minecraft.data.recipes.ShapedRecipeBuilder;
+import net.minecraft.world.level.ItemLike;
+import net.minecraft.data.recipes.RecipeCategory;
+import net.minecraft.resources.ResourceLocation;
 
 import static fr.adrien1106.reframed.util.blocks.BlockProperties.EDGE;
 import static fr.adrien1106.reframed.util.blocks.Edge.*;
 import static fr.adrien1106.reframed.util.blocks.Edge.SOUTH_UP;
-import static net.minecraft.data.client.VariantSettings.Rotation.*;
+import static net.minecraft.data.models.blockstates.VariantProperties.Rotation.*;
 
 public class Step implements RecipeSetter, BlockStateProvider {
 
     @Override
-    public void setRecipe(RecipeExporter exporter, ItemConvertible convertible) {
-        RecipeProvider.offerStonecuttingRecipe(exporter, RecipeCategory.BUILDING_BLOCKS, convertible, ReFramed.CUBE, 4);
-        ShapedRecipeJsonBuilder
-            .create(RecipeCategory.BUILDING_BLOCKS, convertible, 8)
+    public void setRecipe(RecipeOutput exporter, ItemLike convertible) {
+        RecipeProvider.stonecutterResultFromBase(exporter, RecipeCategory.BUILDING_BLOCKS, convertible, ReFramed.CUBE, 4);
+        ShapedRecipeBuilder
+            .shaped(RecipeCategory.BUILDING_BLOCKS, convertible, 8)
             .pattern("II")
-            .input('I', ReFramed.CUBE)
-            .criterion(FabricRecipeProvider.hasItem(ReFramed.CUBE), FabricRecipeProvider.conditionsFromItem(ReFramed.CUBE))
-            .criterion(FabricRecipeProvider.hasItem(convertible), FabricRecipeProvider.conditionsFromItem(convertible))
-            .offerTo(exporter);
+            .define('I', ReFramed.CUBE)
+            .unlockedBy(FabricRecipeProvider.getHasName(ReFramed.CUBE), FabricRecipeProvider.has(ReFramed.CUBE))
+            .unlockedBy(FabricRecipeProvider.getHasName(convertible), FabricRecipeProvider.has(convertible))
+            .save(exporter);
     }
 
     @Override
-    public BlockStateSupplier getMultipart(Block block) {
+    public BlockStateGenerator getMultipart(Block block) {
         return getMultipart(block, "step");
     }
 
-    public static BlockStateSupplier getMultipart(Block block, String model_name) {
+    public static BlockStateGenerator getMultipart(Block block, String model_name) {
         return getMultipart(block, model_name, model_name);
     }
 
-    public static BlockStateSupplier getMultipart(Block block, String model_name, String reverse_model_name) {
-        Identifier model_id = ReFramed.id(model_name + "_special");
-        Identifier reverse_model_id = ReFramed.id(reverse_model_name + "_special");
-        return MultipartBlockStateSupplier.create(block)
+    public static BlockStateGenerator getMultipart(Block block, String model_name, String reverse_model_name) {
+        ResourceLocation model_id = ReFramed.id(model_name + "_special");
+        ResourceLocation reverse_model_id = ReFramed.id(reverse_model_name + "_special");
+        return MultiPartGenerator.multiPart(block)
             /* X AXIS */
             .with(GBlockstate.when(EDGE, DOWN_EAST),
                 GBlockstate.variant(model_id, true, R0, R0))

@@ -3,16 +3,16 @@ package fr.adrien1106.reframed.mixin;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import fr.adrien1106.reframed.block.ReFramedBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockEntityProvider;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtHelper;
-import net.minecraft.state.property.Properties;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -24,28 +24,28 @@ import static fr.adrien1106.reframed.block.ReFramedEntity.BLOCKSTATE_KEY;
 public class BlockItemMixin {
 
     @Inject(
-        method = "writeNbtToBlockEntity",
+        method = "updateCustomBlockEntityTag(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/item/ItemStack;)Z",
         at = @At(
             value = "INVOKE_ASSIGN",
-            target = "Lnet/minecraft/item/BlockItem;getBlockEntityNbt(Lnet/minecraft/item/ItemStack;)Lnet/minecraft/nbt/NbtCompound;",
+            target = "Lnet/minecraft/world/item/BlockItem;getBlockEntityData(Lnet/minecraft/world/item/ItemStack;)Lnet/minecraft/nbt/CompoundTag;",
             shift = At.Shift.AFTER
         )
     )
-    private static void placeBlockWithOffHandCamo(World world, PlayerEntity player, BlockPos pos, ItemStack stack, CallbackInfoReturnable<Boolean> cir, @Local LocalRef<NbtCompound> compound) {
+    private static void placeBlockWithOffHandCamo(Level world, Player player, BlockPos pos, ItemStack stack, CallbackInfoReturnable<Boolean> cir, @Local LocalRef<CompoundTag> compound) {
         if (player == null
             || compound.get() != null
-            || player.getOffHandStack().isEmpty()
-            || player.getMainHandStack().isEmpty()
-            || !(player.getMainHandStack().getItem() instanceof BlockItem frame)
+            || player.getOffhandItem().isEmpty()
+            || player.getMainHandItem().isEmpty()
+            || !(player.getMainHandItem().getItem() instanceof BlockItem frame)
             || !(frame.getBlock() instanceof ReFramedBlock)
-            || !(player.getOffHandStack().getItem() instanceof BlockItem block)
-            || block.getBlock() instanceof BlockEntityProvider
-            || (world.getBlockState(pos).contains(Properties.LAYERS) && world.getBlockState(pos).get(Properties.LAYERS) > 1)
-            || !Block.isShapeFullCube(block.getBlock().getDefaultState().getCollisionShape(world, pos))
+            || !(player.getOffhandItem().getItem() instanceof BlockItem block)
+            || block.getBlock() instanceof EntityBlock
+            || (world.getBlockState(pos).hasProperty(BlockStateProperties.LAYERS) && world.getBlockState(pos).getValue(BlockStateProperties.LAYERS) > 1)
+            || !Block.isShapeFullBlock(block.getBlock().defaultBlockState().getCollisionShape(world, pos))
         ) return;
-        NbtCompound new_comp = new NbtCompound();
-        player.getOffHandStack().decrement(1);
-        new_comp.put(BLOCKSTATE_KEY + 1, NbtHelper.fromBlockState(block.getBlock().getDefaultState()));
+        CompoundTag new_comp = new CompoundTag();
+        player.getOffhandItem().shrink(1);
+        new_comp.put(BLOCKSTATE_KEY + 1, NbtUtils.writeBlockState(block.getBlock().defaultBlockState()));
         compound.set(new_comp);
     }
 

@@ -4,9 +4,9 @@ import earth.terrarium.athena.api.client.utils.AppearanceAndTintGetter;
 import earth.terrarium.athena.api.client.utils.CtmUtils;
 import earth.terrarium.athena.impl.client.models.ConnectedBlockModel;
 import fr.adrien1106.reframed.util.blocks.ThemeableBlockEntity;
-import net.minecraft.block.BlockState;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -23,7 +23,7 @@ public class AthenaConnectedBlockModelMixin {
     private boolean checkForCull(AppearanceAndTintGetter level, BlockState state, BlockPos pos, Direction direction) {
         // Always get all the textures unless its another block then use default behaviour
         if (level.getBlockEntity(pos) instanceof ThemeableBlockEntity
-            || level.getBlockEntity(pos.offset(direction)) instanceof ThemeableBlockEntity)
+            || level.getBlockEntity(pos.relative(direction)) instanceof ThemeableBlockEntity)
             return false;
         return CtmUtils.checkRelative(level, state, pos, direction);
     }

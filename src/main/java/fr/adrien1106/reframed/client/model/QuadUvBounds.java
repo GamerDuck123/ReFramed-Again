@@ -4,8 +4,8 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.renderer.v1.mesh.MutableQuadView;
 import net.fabricmc.fabric.api.renderer.v1.mesh.QuadView;
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.util.Mth;
 
 @Environment(EnvType.CLIENT)
 public record QuadUvBounds(float minU, float maxU, float minV, float maxV) {
@@ -20,23 +20,23 @@ public record QuadUvBounds(float minU, float maxU, float minV, float maxV) {
 		);
 	}
 	
-	boolean displaysSprite(Sprite sprite) {
-		return sprite.getMinU() <= minU && sprite.getMaxU() >= maxU && sprite.getMinV() <= minV && sprite.getMaxV() >= maxV;
+	boolean displaysSprite(TextureAtlasSprite sprite) {
+		return sprite.getU0() <= minU && sprite.getU1() >= maxU && sprite.getV0() <= minV && sprite.getV1() >= maxV;
 	}
 	
-	void normalizeUv(MutableQuadView quad, Sprite sprite) {
-		float remappedMinU = norm(minU, sprite.getMinU(), sprite.getMaxU());
-		float remappedMaxU = norm(maxU, sprite.getMinU(), sprite.getMaxU());
-		float remappedMinV = norm(minV, sprite.getMinV(), sprite.getMaxV());
-		float remappedMaxV = norm(maxV, sprite.getMinV(), sprite.getMaxV());
-		quad.uv(0, MathHelper.approximatelyEquals(quad.u(0), minU) ? remappedMinU : remappedMaxU, MathHelper.approximatelyEquals(quad.v(0), minV) ? remappedMinV : remappedMaxV);
-		quad.uv(1, MathHelper.approximatelyEquals(quad.u(1), minU) ? remappedMinU : remappedMaxU, MathHelper.approximatelyEquals(quad.v(1), minV) ? remappedMinV : remappedMaxV);
-		quad.uv(2, MathHelper.approximatelyEquals(quad.u(2), minU) ? remappedMinU : remappedMaxU, MathHelper.approximatelyEquals(quad.v(2), minV) ? remappedMinV : remappedMaxV);
-		quad.uv(3, MathHelper.approximatelyEquals(quad.u(3), minU) ? remappedMinU : remappedMaxU, MathHelper.approximatelyEquals(quad.v(3), minV) ? remappedMinV : remappedMaxV);
+	void normalizeUv(MutableQuadView quad, TextureAtlasSprite sprite) {
+		float remappedMinU = norm(minU, sprite.getU0(), sprite.getU1());
+		float remappedMaxU = norm(maxU, sprite.getU0(), sprite.getU1());
+		float remappedMinV = norm(minV, sprite.getV0(), sprite.getV1());
+		float remappedMaxV = norm(maxV, sprite.getV0(), sprite.getV1());
+		quad.uv(0, Mth.equal(quad.u(0), minU) ? remappedMinU : remappedMaxU, Mth.equal(quad.v(0), minV) ? remappedMinV : remappedMaxV);
+		quad.uv(1, Mth.equal(quad.u(1), minU) ? remappedMinU : remappedMaxU, Mth.equal(quad.v(1), minV) ? remappedMinV : remappedMaxV);
+		quad.uv(2, Mth.equal(quad.u(2), minU) ? remappedMinU : remappedMaxU, Mth.equal(quad.v(2), minV) ? remappedMinV : remappedMaxV);
+		quad.uv(3, Mth.equal(quad.u(3), minU) ? remappedMinU : remappedMaxU, Mth.equal(quad.v(3), minV) ? remappedMinV : remappedMaxV);
 	}
 	
 	static float norm(float value, float low, float high) {
-		float value2 = MathHelper.clamp(value, low, high);
+		float value2 = Mth.clamp(value, low, high);
 		return (value2 - low) / (high - low);
 	}
 

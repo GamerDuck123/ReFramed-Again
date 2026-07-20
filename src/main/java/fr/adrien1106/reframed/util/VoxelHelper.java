@@ -1,16 +1,16 @@
 package fr.adrien1106.reframed.util;
 
-import net.minecraft.util.function.BooleanBiFunction;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.util.shape.VoxelShapes;
+import net.minecraft.world.phys.shapes.BooleanOp;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.phys.shapes.Shapes;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
-import static net.minecraft.util.shape.VoxelShapes.*;
+import static net.minecraft.world.phys.shapes.Shapes.*;
 
 public class VoxelHelper {
 
@@ -50,16 +50,16 @@ public class VoxelHelper {
 
     public static VoxelShape rotateClockwise(VoxelShape shape, Direction.Axis axis) {
         AtomicReference<VoxelShape> new_shape = new AtomicReference<>(empty());
-        shape.forEachBox((minX, minY, minZ, maxX, maxY, maxZ) ->
+        shape.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) ->
             new_shape.getAndUpdate(s ->
-                combineAndSimplify(
+                join(
                     s,
                     switch (axis) {
-                        case Y -> cuboid(1 - maxZ, minY, minX, 1 - minZ, maxY, maxX);
-                        case X -> cuboid(minX, 1 - maxZ, minY, maxX, 1 - minZ, maxY);
-                        case Z -> cuboid(1 - maxY, minX, minZ, 1 - minY, maxX, maxZ);
+                        case Y -> box(1 - maxZ, minY, minX, 1 - minZ, maxY, maxX);
+                        case X -> box(minX, 1 - maxZ, minY, maxX, 1 - minZ, maxY);
+                        case Z -> box(1 - maxY, minX, minZ, 1 - minY, maxX, maxZ);
                     },
-                    BooleanBiFunction.OR
+                    BooleanOp.OR
                 )
             )
         );
@@ -68,16 +68,16 @@ public class VoxelHelper {
 
     public static VoxelShape rotateCounterClockwise(VoxelShape shape, Direction.Axis axis) {
         AtomicReference<VoxelShape> new_shape = new AtomicReference<>(empty());
-        shape.forEachBox((minX, minY, minZ, maxX, maxY, maxZ) ->
+        shape.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) ->
             new_shape.getAndUpdate(s ->
-                combineAndSimplify(
+                join(
                     s,
                     switch (axis) {
-                        case Y -> cuboid(minZ, minY, 1 - maxX, maxZ, maxY, 1 - minX);
-                        case X -> cuboid(minX, minZ, 1 - maxY, maxX, maxZ, 1 - minY);
-                        case Z -> cuboid(minY, 1 - maxX, minZ, maxY, 1 - minX, maxZ);
+                        case Y -> box(minZ, minY, 1 - maxX, maxZ, maxY, 1 - minX);
+                        case X -> box(minX, minZ, 1 - maxY, maxX, maxZ, 1 - minY);
+                        case Z -> box(minY, 1 - maxX, minZ, maxY, 1 - minX, maxZ);
                     },
-                    BooleanBiFunction.OR
+                    BooleanOp.OR
                 )
             )
         );
@@ -86,16 +86,16 @@ public class VoxelHelper {
 
     public static VoxelShape mirror(VoxelShape shape, Direction.Axis axis) {
         AtomicReference<VoxelShape> new_shape = new AtomicReference<>(empty());
-        shape.forEachBox((minX, minY, minZ, maxX, maxY, maxZ) ->
+        shape.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) ->
             new_shape.getAndUpdate(s ->
-                combineAndSimplify(
+                join(
                     s,
                     switch (axis) {
-                        case Y -> cuboid(minX, 1 - maxY, minZ, maxX, 1 - minY, maxZ);
-                        case X -> cuboid(1 - maxX, minY, minZ, 1 - minX, maxY, maxZ);
-                        case Z -> cuboid(minX, minY, 1 - maxZ, maxX, maxY, 1 - minZ);
+                        case Y -> box(minX, 1 - maxY, minZ, maxX, 1 - minY, maxZ);
+                        case X -> box(1 - maxX, minY, minZ, 1 - minX, maxY, maxZ);
+                        case Z -> box(minX, minY, 1 - maxZ, maxX, maxY, 1 - minZ);
                     },
-                    BooleanBiFunction.OR
+                    BooleanOp.OR
                 )
             )
         );
@@ -104,16 +104,16 @@ public class VoxelHelper {
 
     public static VoxelShape offset(VoxelShape shape, Direction.Axis axis, float offset) {
         AtomicReference<VoxelShape> new_shape = new AtomicReference<>(empty());
-        shape.forEachBox((minX, minY, minZ, maxX, maxY, maxZ) ->
+        shape.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) ->
             new_shape.getAndUpdate(s ->
-                combineAndSimplify(
+                join(
                     s,
                     switch (axis) {
-                        case Y -> cuboid(minX, offset + minY, minZ, maxX, offset + maxY, maxZ);
-                        case X -> cuboid(offset + minX, minY, minZ, offset + maxX, maxY, maxZ);
-                        case Z -> cuboid(minX, minY, offset + minZ, maxX, maxY, offset + maxZ);
+                        case Y -> box(minX, offset + minY, minZ, maxX, offset + maxY, maxZ);
+                        case X -> box(offset + minX, minY, minZ, offset + maxX, maxY, maxZ);
+                        case Z -> box(minX, minY, offset + minZ, maxX, maxY, offset + maxZ);
                     },
-                    BooleanBiFunction.OR
+                    BooleanOp.OR
                 )
             )
         );
@@ -186,7 +186,7 @@ public class VoxelHelper {
          * @return the array of complementary voxels
          */
         public static VoxelShape[] buildFrom(VoxelShape[] ref_voxels) {
-            return buildFrom(VoxelShapes.fullCube(), ref_voxels);
+            return buildFrom(Shapes.block(), ref_voxels);
         }
 
         /**
@@ -197,7 +197,7 @@ public class VoxelHelper {
         public static VoxelShape[] buildFrom(VoxelShape wanted_shape, VoxelShape[] ref_voxels) {
             VoxelShape[] shapes = new VoxelShape[ref_voxels.length];
             for (int i = 0; i < shapes.length; i++) {
-                shapes[i] = VoxelShapes.combineAndSimplify(wanted_shape, ref_voxels[i], BooleanBiFunction.ONLY_FIRST);
+                shapes[i] = Shapes.join(wanted_shape, ref_voxels[i], BooleanOp.ONLY_FIRST);
             }
             return shapes;
         }
@@ -212,10 +212,10 @@ public class VoxelHelper {
         public static VoxelShape[] buildFrom(VoxelShape[] long_voxels, VoxelShape[] short_voxels, Function<Integer, Integer> mapping_function) {
             VoxelShape[] shapes = new VoxelShape[long_voxels.length];
             for (int i = 0; i < shapes.length; i++) {
-                shapes[i] = VoxelShapes.combineAndSimplify(
+                shapes[i] = Shapes.join(
                     long_voxels[i],
                     short_voxels[mapping_function.apply(i)],
-                    BooleanBiFunction.OR
+                    BooleanOp.OR
                 );
             }
             return shapes;

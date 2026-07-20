@@ -1,26 +1,28 @@
+// TODO(Ravel): Failed to fully resolve file: null cannot be cast to non-null type com.intellij.psi.PsiJavaCodeReferenceElement
 package fr.adrien1106.reframed.util.blocks;
 
 import fr.adrien1106.reframed.block.ReFramedEntity;
 import fr.adrien1106.reframed.block.ReFramedStairBlock;
 import fr.adrien1106.reframed.block.ReFramedStairsCubeBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockEntityProvider;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.item.*;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Pair;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.World;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.util.Tuple;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -35,15 +37,15 @@ import static fr.adrien1106.reframed.util.blocks.StairShape.*;
 
 public class BlockHelper {
 
-    public static Corner getPlacementCorner(ItemPlacementContext ctx) {
-        Direction side = ctx.getSide().getOpposite();
-        Vec3d pos = getHitPos(ctx.getHitPos(), ctx.getBlockPos());
-        Pair<Direction, Direction> sides = getHitSides(pos, side);
+    public static Corner getPlacementCorner(BlockPlaceContext ctx) {
+        Direction side = ctx.getClickedFace().getOpposite();
+        Vec3 pos = getHitPos(ctx.getClickLocation(), ctx.getClickedPos());
+        Tuple<Direction, Direction> sides = getHitSides(pos, side);
 
-        return Corner.getByDirections(side, sides.getLeft(), sides.getRight());
+        return Corner.getByDirections(side, sides.getA(), sides.getB());
     }
 
-    private static Pair<Direction, Direction> getHitSides(Vec3d pos, Direction side) {
+    private static Tuple<Direction, Direction> getHitSides(Vec3 pos, Direction side) {
         Iterator<Direction.Axis> axes = Stream.of(Direction.Axis.values())
             .filter(axis -> !axis.equals(side.getAxis())).iterator();
         return new Pair<>(getHitDirection(axes.next(), pos), getHitDirection(axes.next(), pos));

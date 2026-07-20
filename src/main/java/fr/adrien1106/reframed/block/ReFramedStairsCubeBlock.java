@@ -3,19 +3,26 @@ package fr.adrien1106.reframed.block;
 import fr.adrien1106.reframed.util.blocks.BlockHelper;
 import fr.adrien1106.reframed.util.blocks.Edge;
 import fr.adrien1106.reframed.util.blocks.StairShape;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.state.StateManager;
-import net.minecraft.util.BlockMirror;
-import net.minecraft.util.BlockRotation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.world.WorldAccess;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.level.LevelAccessor;
 import org.jetbrains.annotations.Nullable;
 
 import static fr.adrien1106.reframed.block.ReFramedStairBlock.*;
+// TODO(Ravel): ambiguous static import, members with name VoxelListBuilder have different new names
+//
+// TODO(Ravel): ambiguous static import, members with name VoxelListBuilder have different new names
+//
+// TODO(Ravel): ambiguous static import, members with name VoxelListBuilder have different new names
+//
 import static fr.adrien1106.reframed.util.VoxelHelper.VoxelListBuilder;
 import static fr.adrien1106.reframed.util.blocks.BlockProperties.EDGE;
 import static fr.adrien1106.reframed.util.blocks.BlockProperties.STAIR_SHAPE;
@@ -24,64 +31,64 @@ public class ReFramedStairsCubeBlock extends ReFramedDoubleBlock {
 
     private static final VoxelShape[] STAIRS_CUBE_VOXELS = VoxelListBuilder.buildFrom(STAIR_VOXELS);
 
-    public ReFramedStairsCubeBlock(Settings settings) {
+    public ReFramedStairsCubeBlock(Properties settings) {
         super(settings);
-        setDefaultState(getDefaultState().with(EDGE, Edge.NORTH_DOWN).with(STAIR_SHAPE, StairShape.STRAIGHT));
+        registerDefaultState(defaultBlockState().setValue(EDGE, Edge.NORTH_DOWN).setValue(STAIR_SHAPE, StairShape.STRAIGHT));
     }
 
     @Override
-    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
-        super.appendProperties(builder.add(EDGE, STAIR_SHAPE));
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder.add(EDGE, STAIR_SHAPE));
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public BlockState getStateForNeighborUpdate(BlockState state, Direction direction, BlockState neighbor_state, WorldAccess world, BlockPos pos, BlockPos moved) {
-        return super.getStateForNeighborUpdate(state, direction, neighbor_state, world, pos, moved)
-            .with(STAIR_SHAPE, BlockHelper.getStairsShape(state.get(EDGE), world, pos));
+    public BlockState updateShape(BlockState state, Direction direction, BlockState neighbor_state, LevelAccessor world, BlockPos pos, BlockPos moved) {
+        return super.updateShape(state, direction, neighbor_state, world, pos, moved)
+            .setValue(STAIR_SHAPE, BlockHelper.getStairsShape(state.getValue(EDGE), world, pos));
     }
 
 
     @Nullable
     @Override
-    public BlockState getPlacementState(ItemPlacementContext ctx) {
+    public BlockState getStateForPlacement(BlockPlaceContext ctx) {
         Edge face = BlockHelper.getPlacementEdge(ctx);
-        StairShape shape = BlockHelper.getStairsShape(face, ctx.getWorld(), ctx.getBlockPos());
-        return super.getPlacementState(ctx).with(EDGE, face).with(STAIR_SHAPE, shape);
+        StairShape shape = BlockHelper.getStairsShape(face, ctx.getLevel(), ctx.getClickedPos());
+        return super.getStateForPlacement(ctx).setValue(EDGE, face).setValue(STAIR_SHAPE, shape);
     }
 
 
     @Override
     @SuppressWarnings("deprecation")
-    public BlockState rotate(BlockState state, BlockRotation rotation) {
-        Edge prev_edge = state.get(EDGE);
+    public BlockState rotate(BlockState state, Rotation rotation) {
+        Edge prev_edge = state.getValue(EDGE);
         Edge edge = prev_edge.rotate(rotation);
-        if (prev_edge.getAxis() == Direction.Axis.Y) return state.with(EDGE, edge);
+        if (prev_edge.getAxis() == Direction.Axis.Y) return state.setValue(EDGE, edge);
 
-        if (prev_edge.getFace().getDirection() == edge.getFace().getDirection()) // 90° rotations
-            state = state.with(STAIR_SHAPE, state.get(STAIR_SHAPE).mirror());
-        else state = state.with(STAIR_SHAPE, state.get(STAIR_SHAPE).flip());
+        if (prev_edge.getFace().getAxisDirection() == edge.getFace().getAxisDirection()) // 90° rotations
+            state = state.setValue(STAIR_SHAPE, state.getValue(STAIR_SHAPE).mirror());
+        else state = state.setValue(STAIR_SHAPE, state.getValue(STAIR_SHAPE).flip());
 
         if (prev_edge.getAxis() == edge.getAxis()) // 180° rotation
-            state = state.with(STAIR_SHAPE, state.get(STAIR_SHAPE).mirror());
+            state = state.setValue(STAIR_SHAPE, state.getValue(STAIR_SHAPE).mirror());
 
-        return state.with(EDGE, edge);
+        return state.setValue(EDGE, edge);
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public BlockState mirror(BlockState state, BlockMirror mirror) {
-        Edge prev_edge = state.get(EDGE);
+    public BlockState mirror(BlockState state, Mirror mirror) {
+        Edge prev_edge = state.getValue(EDGE);
         Edge edge = prev_edge.mirror(mirror);
         return state
-            .with(STAIR_SHAPE, prev_edge == edge ? state.get(STAIR_SHAPE).mirror() : state.get(STAIR_SHAPE).flip())
-            .with(EDGE, edge);
+            .setValue(STAIR_SHAPE, prev_edge == edge ? state.getValue(STAIR_SHAPE).mirror() : state.getValue(STAIR_SHAPE).flip())
+            .setValue(EDGE, edge);
     }
 
     @Override
     public VoxelShape getShape(BlockState state, int i) {
-        Edge edge = state.get(EDGE);
-        StairShape shape = state.get(STAIR_SHAPE);
+        Edge edge = state.getValue(EDGE);
+        StairShape shape = state.getValue(STAIR_SHAPE);
         return i == 2 ? STAIRS_CUBE_VOXELS[edge.getID() * 9 + shape.getID()] : getStairShape(edge, shape);
     }
 }

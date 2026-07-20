@@ -2,9 +2,9 @@ package fr.adrien1106.reframed.mixin.compat;
 
 import com.moulberry.axiom.world_modification.ClientBlockEntitySerializer;
 import fr.adrien1106.reframed.util.blocks.ThemeableBlockEntity;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.HolderLookup;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -19,8 +19,8 @@ public class AxiomClientBlockEntitySerializerMixin {
         remap = false,
         cancellable = true
     )
-    private static void serialize(BlockEntity blockEntity, RegistryWrapper.WrapperLookup provider, CallbackInfoReturnable<NbtCompound> cir) {
+    private static void serialize(BlockEntity blockEntity, HolderLookup.Provider provider, CallbackInfoReturnable<CompoundTag> cir) {
         if (!(blockEntity instanceof ThemeableBlockEntity)) return;
-        cir.setReturnValue(blockEntity.createNbt());
+        cir.setReturnValue(blockEntity.saveWithoutMetadata());
     }
 }

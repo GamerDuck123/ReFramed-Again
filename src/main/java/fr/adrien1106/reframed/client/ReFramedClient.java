@@ -6,13 +6,13 @@ import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.model.ModelLoadingRegistry;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
-import net.minecraft.block.Block;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.resource.ResourceType;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.ChunkSectionPos;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.SectionPos;
 
 public class ReFramedClient implements ClientModInitializer {
 	public static final ReFramedModelProvider PROVIDER = new ReFramedModelProvider();
@@ -24,19 +24,19 @@ public class ReFramedClient implements ClientModInitializer {
 		privateInit(); //<- Stuff you shouldn't replicate in any addon mods ;)
 		
 		//all frames mustn't be on the SOLID layer because they are not opaque!
-		BlockRenderLayerMap.INSTANCE.putBlocks(RenderLayer.getCutout(), ReFramed.BLOCKS.toArray(new Block[0]));
+		BlockRenderLayerMap.INSTANCE.putBlocks(RenderType.cutout(), ReFramed.BLOCKS.toArray(new Block[0]));
 
 		// CUBE
-		HELPER.addReFramedModel("cube"                          , HELPER.auto(new Identifier("block/cube")));
+		HELPER.addReFramedModel("cube"                          , HELPER.auto(new ResourceLocation("block/cube")));
 		// SMALL_CUBE
 		HELPER.addReFramedModel("small_cube"                    , HELPER.auto(ReFramed.id("block/small_cube/base")));
 		// SMALL_CUBES_STEP
 		HELPER.addReFramedModel("small_cubes_step"              , HELPER.autoDouble(ReFramed.id("block/small_cube/base"), ReFramed.id("block/small_cube/step/base")));
 		HELPER.addReFramedModel("small_cubes_step_reverse"      , HELPER.autoDouble(ReFramed.id("block/small_cube/step/base"), ReFramed.id("block/small_cube/base")));
 		// SLAB
-		HELPER.addReFramedModel("slab"                          , HELPER.auto(new Identifier("block/slab")));
+		HELPER.addReFramedModel("slab"                          , HELPER.auto(new ResourceLocation("block/slab")));
 		// SLAB_CUBE
-		HELPER.addReFramedModel("double_slab"                   , HELPER.autoDouble(new Identifier("block/slab"), new Identifier("block/slab_top")));
+		HELPER.addReFramedModel("double_slab"                   , HELPER.autoDouble(new ResourceLocation("block/slab"), new ResourceLocation("block/slab_top")));
 		// STAIR
 		HELPER.addReFramedModel("stair"                         , HELPER.auto(ReFramed.id("block/stair/straight")));
 		HELPER.addReFramedModel("outers_stair"                  , HELPER.auto(ReFramed.id("block/stair/double_outer")));
@@ -65,14 +65,14 @@ public class ReFramedClient implements ClientModInitializer {
 		HELPER.addReFramedModel("steps_slab"                    , HELPER.autoDouble(ReFramed.id("block/step/down"), ReFramed.id("block/step/slab/down")));
 		HELPER.addReFramedModel("steps_slab_side"               , HELPER.autoDouble(ReFramed.id("block/step/side"), ReFramed.id("block/step/slab/side")));
 		// LAYER
-		HELPER.addReFramedModel("layer_1"                       , HELPER.auto(new Identifier("block/snow_height2")));
-		HELPER.addReFramedModel("layer_2"                       , HELPER.auto(new Identifier("block/snow_height4")));
-		HELPER.addReFramedModel("layer_3"                       , HELPER.auto(new Identifier("block/snow_height6")));
-		HELPER.addReFramedModel("layer_4"                       , HELPER.auto(new Identifier("block/snow_height8")));
-		HELPER.addReFramedModel("layer_5"                       , HELPER.auto(new Identifier("block/snow_height10")));
-		HELPER.addReFramedModel("layer_6"                       , HELPER.auto(new Identifier("block/snow_height12")));
-		HELPER.addReFramedModel("layer_7"                       , HELPER.auto(new Identifier("block/snow_height14")));
-		HELPER.addReFramedModel("layer_8"                       , HELPER.auto(new Identifier("block/cube")));
+		HELPER.addReFramedModel("layer_1"                       , HELPER.auto(new ResourceLocation("block/snow_height2")));
+		HELPER.addReFramedModel("layer_2"                       , HELPER.auto(new ResourceLocation("block/snow_height4")));
+		HELPER.addReFramedModel("layer_3"                       , HELPER.auto(new ResourceLocation("block/snow_height6")));
+		HELPER.addReFramedModel("layer_4"                       , HELPER.auto(new ResourceLocation("block/snow_height8")));
+		HELPER.addReFramedModel("layer_5"                       , HELPER.auto(new ResourceLocation("block/snow_height10")));
+		HELPER.addReFramedModel("layer_6"                       , HELPER.auto(new ResourceLocation("block/snow_height12")));
+		HELPER.addReFramedModel("layer_7"                       , HELPER.auto(new ResourceLocation("block/snow_height14")));
+		HELPER.addReFramedModel("layer_8"                       , HELPER.auto(new ResourceLocation("block/cube")));
 		// PILLAR
 		HELPER.addReFramedModel("pillar"                        , HELPER.auto(ReFramed.id("block/pillar")));
 		// WALL
@@ -119,21 +119,21 @@ public class ReFramedClient implements ClientModInitializer {
 		HELPER.addReFramedModel("pillars_wall_tall"             , HELPER.autoDouble(ReFramed.id("block/wall/full/pillar/tall"), ReFramed.id("block/wall/full/side/tall")));
         // PANE
         HELPER.addReFramedModel("pane_inventory"                , HELPER.auto(ReFramed.id("block/pane")));
-        HELPER.addReFramedModel("pane_post"                     , HELPER.auto(new Identifier("block/glass_pane_post")));
-        HELPER.addReFramedModel("pane_side"                     , HELPER.auto(new Identifier("block/glass_pane_side")));
-        HELPER.addReFramedModel("pane_side_alt"                 , HELPER.auto(new Identifier("block/glass_pane_side_alt")));
-        HELPER.addReFramedModel("pane_noside"                   , HELPER.auto(new Identifier("block/glass_pane_noside")));
-        HELPER.addReFramedModel("pane_noside_alt"               , HELPER.auto(new Identifier("block/glass_pane_noside_alt")));
+        HELPER.addReFramedModel("pane_post"                     , HELPER.auto(new ResourceLocation("block/glass_pane_post")));
+        HELPER.addReFramedModel("pane_side"                     , HELPER.auto(new ResourceLocation("block/glass_pane_side")));
+        HELPER.addReFramedModel("pane_side_alt"                 , HELPER.auto(new ResourceLocation("block/glass_pane_side_alt")));
+        HELPER.addReFramedModel("pane_noside"                   , HELPER.auto(new ResourceLocation("block/glass_pane_noside")));
+        HELPER.addReFramedModel("pane_noside_alt"               , HELPER.auto(new ResourceLocation("block/glass_pane_noside_alt")));
         // TRAPDOOR
-        HELPER.addReFramedModel("trapdoor_open"                 , HELPER.auto(new Identifier("block/oak_trapdoor_open")));
-        HELPER.addReFramedModel("trapdoor_bottom"               , HELPER.auto(new Identifier("block/oak_trapdoor_bottom")));
-        HELPER.addReFramedModel("trapdoor_top"                  , HELPER.auto(new Identifier("block/oak_trapdoor_top")));
+        HELPER.addReFramedModel("trapdoor_open"                 , HELPER.auto(new ResourceLocation("block/oak_trapdoor_open")));
+        HELPER.addReFramedModel("trapdoor_bottom"               , HELPER.auto(new ResourceLocation("block/oak_trapdoor_bottom")));
+        HELPER.addReFramedModel("trapdoor_top"                  , HELPER.auto(new ResourceLocation("block/oak_trapdoor_top")));
         // DOOR
         HELPER.addReFramedModel("door_inventory"                , HELPER.auto(ReFramed.id("block/door")));
         // BUTTON
-        HELPER.addReFramedModel("button_inventory"              , HELPER.auto(new Identifier("block/button_inventory")));
-        HELPER.addReFramedModel("button"                        , HELPER.auto(new Identifier("block/button")));
-        HELPER.addReFramedModel("button_pressed"                , HELPER.auto(new Identifier("block/button_pressed")));
+        HELPER.addReFramedModel("button_inventory"              , HELPER.auto(new ResourceLocation("block/button_inventory")));
+        HELPER.addReFramedModel("button"                        , HELPER.auto(new ResourceLocation("block/button")));
+        HELPER.addReFramedModel("button_pressed"                , HELPER.auto(new ResourceLocation("block/button_pressed")));
         // POST
         HELPER.addReFramedModel("post"                          , HELPER.auto(ReFramed.id("block/post")));
         // FENCE
@@ -183,7 +183,7 @@ public class ReFramedClient implements ClientModInitializer {
         HELPER.addReFramedModel("half_layer_side_14"           , HELPER.auto(ReFramed.id("block/half_layer/side/layer_14")));
         HELPER.addReFramedModel("half_layer_side_16"           , HELPER.auto(ReFramed.id("block/half_layer/side/layer_16")));
         // SLAB HALF LAYER
-        HELPER.addReFramedModel("slabs_half_inventory"         , HELPER.autoDouble(new Identifier("block/slab"), ReFramed.id("block/half_layer/slab/east/layer_4")));
+        HELPER.addReFramedModel("slabs_half_inventory"         , HELPER.autoDouble(new ResourceLocation("block/slab"), ReFramed.id("block/half_layer/slab/east/layer_4")));
         // STEP HALF LAYER
         HELPER.addReFramedModel("steps_half_inventory"         , HELPER.autoDouble(ReFramed.id("block/step/down"), ReFramed.id("block/half_layer/slab/east/layer_4")));
         // --------------------- east
@@ -209,10 +209,10 @@ public class ReFramedClient implements ClientModInitializer {
         // HALF SLABS SLAB
         HELPER.addReFramedModel("half_slabs_slab"              , HELPER.autoDouble(ReFramed.id("block/half_slab/default"), ReFramed.id("block/half_slab/complement")));
         // SLABS LAYER
-        HELPER.addReFramedModel("slabs_layer_2"                , HELPER.autoDouble(new Identifier("block/slab"), ReFramed.id("block/layer_top/layer_2")));
-        HELPER.addReFramedModel("slabs_layer_4"                , HELPER.autoDouble(new Identifier("block/slab"), ReFramed.id("block/layer_top/layer_4")));
-        HELPER.addReFramedModel("slabs_layer_6"                , HELPER.autoDouble(new Identifier("block/slab"), ReFramed.id("block/layer_top/layer_6")));
-        HELPER.addReFramedModel("slabs_layer_8"                , HELPER.autoDouble(new Identifier("block/slab"), ReFramed.id("block/layer_top/layer_8")));
+        HELPER.addReFramedModel("slabs_layer_2"                , HELPER.autoDouble(new ResourceLocation("block/slab"), ReFramed.id("block/layer_top/layer_2")));
+        HELPER.addReFramedModel("slabs_layer_4"                , HELPER.autoDouble(new ResourceLocation("block/slab"), ReFramed.id("block/layer_top/layer_4")));
+        HELPER.addReFramedModel("slabs_layer_6"                , HELPER.autoDouble(new ResourceLocation("block/slab"), ReFramed.id("block/layer_top/layer_6")));
+        HELPER.addReFramedModel("slabs_layer_8"                , HELPER.autoDouble(new ResourceLocation("block/slab"), ReFramed.id("block/layer_top/layer_8")));
 
 
 
@@ -257,11 +257,11 @@ public class ReFramedClient implements ClientModInitializer {
 	private void privateInit() {
 		//set up some magic to force chunk re-renders when you change a template (see TemplateEntity)
 		ReFramed.chunkRerenderProxy = (world, pos) -> {
-			if(world == MinecraftClient.getInstance().world) {
-				MinecraftClient.getInstance().worldRenderer.scheduleBlockRender(
-					ChunkSectionPos.getSectionCoord(pos.getX()),
-					ChunkSectionPos.getSectionCoord(pos.getY()),
-					ChunkSectionPos.getSectionCoord(pos.getZ())
+			if(world == Minecraft.getInstance().level) {
+				Minecraft.getInstance().levelRenderer.setSectionDirty(
+					SectionPos.blockToSectionCoord(pos.getX()),
+					SectionPos.blockToSectionCoord(pos.getY()),
+					SectionPos.blockToSectionCoord(pos.getZ())
 				);
 			}
 		};
@@ -270,9 +270,9 @@ public class ReFramedClient implements ClientModInitializer {
 		ModelLoadingRegistry.INSTANCE.registerResourceProvider(rm -> PROVIDER); //block models
 		ModelLoadingRegistry.INSTANCE.registerVariantProvider(rm -> PROVIDER); //item models
 
-		ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {
-			@Override public Identifier getFabricId() { return ReFramed.id("dump-caches"); }
-			@Override public void reload(ResourceManager blah) { PROVIDER.dumpCache(); }
+		ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {
+			@Override public ResourceLocation getFabricId() { return ReFramed.id("dump-caches"); }
+			@Override public void onResourceManagerReload(ResourceManager blah) { PROVIDER.dumpCache(); }
 		});
 	}
 }

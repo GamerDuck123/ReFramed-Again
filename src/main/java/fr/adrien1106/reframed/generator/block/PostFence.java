@@ -6,34 +6,34 @@ import fr.adrien1106.reframed.generator.GBlockstate;
 import fr.adrien1106.reframed.generator.RecipeSetter;
 import fr.adrien1106.reframed.generator.TagGetter;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricRecipeProvider;
-import net.minecraft.block.Block;
-import net.minecraft.data.client.BlockStateSupplier;
-import net.minecraft.data.client.MultipartBlockStateSupplier;
-import net.minecraft.data.server.recipe.RecipeExporter;
-import net.minecraft.data.server.recipe.RecipeProvider;
-import net.minecraft.data.server.recipe.ShapelessRecipeJsonBuilder;
-import net.minecraft.item.ItemConvertible;
-import net.minecraft.recipe.book.RecipeCategory;
-import net.minecraft.registry.tag.BlockTags;
-import net.minecraft.registry.tag.TagKey;
-import net.minecraft.util.Identifier;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.data.models.blockstates.BlockStateGenerator;
+import net.minecraft.data.models.blockstates.MultiPartGenerator;
+import net.minecraft.data.recipes.RecipeOutput;
+import net.minecraft.data.recipes.RecipeProvider;
+import net.minecraft.data.recipes.ShapelessRecipeBuilder;
+import net.minecraft.world.level.ItemLike;
+import net.minecraft.data.recipes.RecipeCategory;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.List;
 
-import static net.minecraft.data.client.VariantSettings.Rotation.*;
-import static net.minecraft.state.property.Properties.*;
+import static net.minecraft.data.models.blockstates.VariantProperties.Rotation.*;
+import static net.minecraft.world.level.block.state.properties.BlockStateProperties.*;
 
 public class PostFence implements RecipeSetter, TagGetter, BlockStateProvider {
 
     @Override
-    public void setRecipe(RecipeExporter exporter, ItemConvertible convertible) {
-        RecipeProvider.offerStonecuttingRecipe(exporter, RecipeCategory.BUILDING_BLOCKS, convertible, ReFramed.FENCE, 1);
-        ShapelessRecipeJsonBuilder
-            .create(RecipeCategory.BUILDING_BLOCKS, convertible, 2)
-            .input(ReFramed.FENCE, 2)
-            .criterion(FabricRecipeProvider.hasItem(ReFramed.CUBE), FabricRecipeProvider.conditionsFromItem(ReFramed.CUBE))
-            .criterion(FabricRecipeProvider.hasItem(convertible), FabricRecipeProvider.conditionsFromItem(convertible))
-            .offerTo(exporter);
+    public void setRecipe(RecipeOutput exporter, ItemLike convertible) {
+        RecipeProvider.stonecutterResultFromBase(exporter, RecipeCategory.BUILDING_BLOCKS, convertible, ReFramed.FENCE, 1);
+        ShapelessRecipeBuilder
+            .shapeless(RecipeCategory.BUILDING_BLOCKS, convertible, 2)
+            .requires(ReFramed.FENCE, 2)
+            .unlockedBy(FabricRecipeProvider.getHasName(ReFramed.CUBE), FabricRecipeProvider.has(ReFramed.CUBE))
+            .unlockedBy(FabricRecipeProvider.getHasName(convertible), FabricRecipeProvider.has(convertible))
+            .save(exporter);
     }
 
     @Override
@@ -42,10 +42,10 @@ public class PostFence implements RecipeSetter, TagGetter, BlockStateProvider {
     }
 
     @Override
-    public BlockStateSupplier getMultipart(Block block) {
-        Identifier side_on = ReFramed.id("post_fence_side_special");
-        Identifier side_off = ReFramed.id("fence_side_off_special");
-        return MultipartBlockStateSupplier.create(block)
+    public BlockStateGenerator getMultipart(Block block) {
+        ResourceLocation side_on = ReFramed.id("post_fence_side_special");
+        ResourceLocation side_off = ReFramed.id("fence_side_off_special");
+        return MultiPartGenerator.multiPart(block)
             .with(GBlockstate.variant(ReFramed.id("fence_core_special"), true, R0, R0))
             // SIDE ON
             .with(GBlockstate.when(NORTH, true),

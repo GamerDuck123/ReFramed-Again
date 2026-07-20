@@ -4,13 +4,13 @@ import fr.adrien1106.reframed.client.model.apperance.CamoAppearanceManager;
 import net.fabricmc.fabric.api.client.model.ModelProviderContext;
 import net.fabricmc.fabric.api.client.model.ModelResourceProvider;
 import net.fabricmc.fabric.api.client.model.ModelVariantProvider;
-import net.minecraft.client.render.model.UnbakedModel;
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.client.util.ModelIdentifier;
-import net.minecraft.client.util.SpriteIdentifier;
-import net.minecraft.item.ItemConvertible;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.resources.model.UnbakedModel;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.client.resources.model.Material;
+import net.minecraft.world.level.ItemLike;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -19,15 +19,15 @@ import java.util.Objects;
 import java.util.function.Function;
 
 public class ReFramedModelProvider implements ModelResourceProvider, ModelVariantProvider {
-	private final Map<Identifier, UnbakedModel> models = new HashMap<>();
-	private final Map<ModelIdentifier, Identifier> itemAssignments = new HashMap<>();
+	private final Map<ResourceLocation, UnbakedModel> models = new HashMap<>();
+	private final Map<ModelResourceLocation, ResourceLocation> itemAssignments = new HashMap<>();
 	
 	private volatile CamoAppearanceManager appearanceManager;
 	
 	/// fabric model provider api
 	
 	@Override
-	public @Nullable UnbakedModel loadModelResource(Identifier resourceId, ModelProviderContext context) {
+	public @Nullable UnbakedModel loadModelResource(ResourceLocation resourceId, ModelProviderContext context) {
 		return models.get(resourceId);
 	}
 	
@@ -37,14 +37,14 @@ public class ReFramedModelProvider implements ModelResourceProvider, ModelVarian
 	//but json models are never allowed to have non-json models as a parent, and frame unbaked models are not json models. Ah well.
 	//So, instead, we use a ModelVariantProvider to redirect attempts to load the item:id#inventory model.
 	@Override
-	public @Nullable UnbakedModel loadModelVariant(ModelIdentifier model, ModelProviderContext context) {
-		Identifier custom_model = itemAssignments.get(model);
+	public @Nullable UnbakedModel loadModelVariant(ModelResourceLocation model, ModelProviderContext context) {
+		ResourceLocation custom_model = itemAssignments.get(model);
 		return custom_model == null ? null : loadModelResource(custom_model, context);
 	}
 	
 	/// camo appearance manager cache
 	
-	public CamoAppearanceManager getCamoAppearanceManager(Function<SpriteIdentifier, Sprite> spriteLookup) {
+	public CamoAppearanceManager getCamoAppearanceManager(Function<Material, TextureAtlasSprite> spriteLookup) {
 		//This is kind of needlessly sketchy using the "volatile double checked locking" pattern.
 		//I'd like all frame models to use the same CamoApperanceManager, despite the model
 		//baking process happening concurrently on several threads, but I also don't want to
@@ -74,15 +74,15 @@ public class ReFramedModelProvider implements ModelResourceProvider, ModelVarian
 		appearanceManager = null; //volatile write
 	}
 	
-	public void addReFramedModel(Identifier id, UnbakedModel unbaked) {
+	public void addReFramedModel(ResourceLocation id, UnbakedModel unbaked) {
 		models.put(id, unbaked);
 	}
 	
-	public void assignItemModel(Identifier model_id, Identifier... itemIds) {
-		for(Identifier itemId : itemIds) itemAssignments.put(new ModelIdentifier(itemId, "inventory"), model_id);
+	public void assignItemModel(ResourceLocation model_id, ResourceLocation... itemIds) {
+		for(ResourceLocation itemId : itemIds) itemAssignments.put(new ModelResourceLocation(itemId, "inventory"), model_id);
 	}
 	
-	public void assignItemModel(Identifier model_id, ItemConvertible... itemConvs) {
-		for(ItemConvertible itemConv : itemConvs) assignItemModel(model_id, Registries.ITEM.getId(itemConv.asItem()));
+	public void assignItemModel(ResourceLocation model_id, ItemLike... itemConvs) {
+		for(ItemLike itemConv : itemConvs) assignItemModel(model_id, BuiltInRegistries.ITEM.getKey(itemConv.asItem()));
 	}
 }

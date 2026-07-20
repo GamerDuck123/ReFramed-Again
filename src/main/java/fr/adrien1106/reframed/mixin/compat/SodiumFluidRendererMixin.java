@@ -7,11 +7,16 @@ import me.jellysquid.mods.sodium.client.render.chunk.compile.pipeline.FluidRende
 import me.jellysquid.mods.sodium.client.world.WorldSlice;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
 import net.minecraft.block.*;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.util.shape.VoxelShapes;
-import net.minecraft.world.BlockView;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.AirBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.HalfTransparentBlock;
+import net.minecraft.world.level.block.LeavesBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.level.BlockGetter;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -23,11 +28,11 @@ public abstract class SodiumFluidRendererMixin {
         method = "isSideExposed",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/block/BlockState;isOpaque()Z"
+            target = "Lnet/minecraft/world/level/block/state/BlockState;isOpaque()Z"
         )
     )
     private boolean isSideOpaqueExposed(BlockState state) {
-        if (!(state.getBlock() instanceof ReFramedBlock)) return state.isOpaque();
+        if (!(state.getBlock() instanceof ReFramedBlock)) return state.canOcclude();
         return true; // forces to compute correct shape
     }
 
@@ -35,11 +40,11 @@ public abstract class SodiumFluidRendererMixin {
         method = "isSideExposed",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/block/BlockState;getCullingShape(Lnet/minecraft/world/BlockView;Lnet/minecraft/util/math/BlockPos;)Lnet/minecraft/util/shape/VoxelShape;"
+            target = "Lnet/minecraft/world/level/block/state/BlockState;getCullingShape(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/phys/shapes/VoxelShape;"
         )
     )
-    private VoxelShape isSideShapeExposed(BlockState state, BlockView world, BlockPos pos) {
-        if (!(state.getBlock() instanceof ReFramedBlock block)) return state.getCullingShape(world, pos);
+    private VoxelShape isSideShapeExposed(BlockState state, BlockGetter world, BlockPos pos) {
+        if (!(state.getBlock() instanceof ReFramedBlock block)) return state.getOcclusionShape(world, pos);
         return block.getShadingShape(state, world, pos);
     }
 
@@ -47,15 +52,15 @@ public abstract class SodiumFluidRendererMixin {
         method = "render",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/fabricmc/fabric/api/client/render/fluid/v1/FluidRenderHandlerRegistry;isBlockTransparent(Lnet/minecraft/block/Block;)Z"
+            target = "Lnet/fabricmc/fabric/api/client/render/fluid/v1/FluidRenderHandlerRegistry;isBlockTransparent(Lnet/minecraft/world/level/block/Block;)Z"
         )
     )
     private boolean getThemeState(FluidRenderHandlerRegistry fluid_handler, Block block, @Local(argsOnly = true) WorldSlice world, @Local(ordinal = 2) BlockPos pos, @Local BlockState state, @Local Direction dir) {
         if (!(block instanceof ReFramedBlock rfblock && world.getBlockEntity(pos) instanceof ThemeableBlockEntity framed_entity)) return fluid_handler.isBlockTransparent(block);
-        return !VoxelShapes.isSideCovered(VoxelShapes.fullCube(), rfblock.getShadingShape(state, world, pos), dir)
+        return !Shapes.blockOccudes(Shapes.block(), rfblock.getShadingShape(state, world, pos), dir)
             && framed_entity.getThemes().stream()
                 .anyMatch(s -> s.getBlock() instanceof LeavesBlock
-                    || s.getBlock() instanceof TranslucentBlock
+                    || s.getBlock() instanceof HalfTransparentBlock
                     || s.getBlock() instanceof AirBlock
                 );
     }

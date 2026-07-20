@@ -1,7 +1,9 @@
+// TODO(Ravel): Failed to fully resolve file: null cannot be cast to non-null type com.intellij.psi.PsiJavaCodeReferenceElement
 package fr.adrien1106.reframed.client.model;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.mojang.authlib.minecraft.client.MinecraftClient;
 import fr.adrien1106.reframed.block.ReFramedEntity;
 import fr.adrien1106.reframed.client.ReFramedClient;
 import fr.adrien1106.reframed.mixin.MinecraftAccessor;
@@ -14,25 +16,25 @@ import net.fabricmc.fabric.api.renderer.v1.mesh.*;
 import net.fabricmc.fabric.api.renderer.v1.model.ForwardingBakedModel;
 import net.fabricmc.fabric.api.renderer.v1.model.ModelHelper;
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.model.BakedModel;
-import net.minecraft.client.render.model.BakedQuad;
-import net.minecraft.client.render.model.ModelBakeSettings;
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.BlockRenderView;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.resources.model.ModelState;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.BlockAndTintGetter;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 public abstract class RetexturingBakedModel extends ForwardingBakedModel {
-	public RetexturingBakedModel(BakedModel base_model, CamoAppearanceManager tam, int theme_index, ModelBakeSettings settings, BlockState item_state) {
+	public RetexturingBakedModel(BakedModel base_model, CamoAppearanceManager tam, int theme_index, ModelState settings, BlockState item_state) {
 		this.wrapped = base_model; //field from the superclass; vanilla getQuads etc. will delegate through to this
 
 		this.appearance_manager = tam;
@@ -76,7 +78,7 @@ public abstract class RetexturingBakedModel extends ForwardingBakedModel {
     private List<BakedQuad>[] quads = null;
 
     @Override
-    public List<BakedQuad> getQuads(BlockState state, Direction face, Random rand) {
+    public List<BakedQuad> getQuads(BlockState state, Direction face, RandomSource rand) {
         if (quads == null) {
             quads = ModelHelper.toQuadLists(
                 getRetexturedMesh(
@@ -92,7 +94,7 @@ public abstract class RetexturingBakedModel extends ForwardingBakedModel {
         return quads[ModelHelper.toFaceIndex(face)];
     }
 
-    public void setCamo(BlockRenderView world, BlockState state, BlockPos pos) {
+    public void setCamo(BlockAndTintGetter world, BlockState state, BlockPos pos) {
         if (state == null || state.isAir()) {
             quads = null;
             return;
@@ -114,7 +116,7 @@ public abstract class RetexturingBakedModel extends ForwardingBakedModel {
 	}
 	
 	@Override
-	public Sprite getParticleSprite() {
+	public TextureAtlasSprite getParticleIcon() {
 		return appearance_manager.getDefaultAppearance(theme_index).getSprites(Direction.UP, 0).get(0).sprite();
 	}
 
@@ -123,7 +125,7 @@ public abstract class RetexturingBakedModel extends ForwardingBakedModel {
 	}
 
 	@Override
-	public void emitBlockQuads(BlockRenderView world, BlockState state, BlockPos pos, Supplier<Random> randomSupplier, RenderContext context) {
+	public void emitBlockQuads(BlockAndTintGetter world, BlockState state, BlockPos pos, Supplier<RandomSource> randomSupplier, RenderContext context) {
 		BlockState theme = (world.getBlockEntity(pos) instanceof ThemeableBlockEntity s) ? s.getTheme(theme_index) : null;
 
 		QuadEmitter quad_emitter = context.getEmitter();
@@ -141,7 +143,7 @@ public abstract class RetexturingBakedModel extends ForwardingBakedModel {
 		if(theme.getBlock() == Blocks.BARRIER) return;
 		
 		CamoAppearance camo = appearance_manager.getCamoAppearance(world, theme, pos, theme_index, false);
-		long seed = theme.getRenderingSeed(pos);
+		long seed = theme.getSeed(pos);
 		int model_id = 0;
 		if (camo instanceof WeightedComputedAppearance wca) model_id = wca.getAppearanceIndex(seed);
 
@@ -162,7 +164,7 @@ public abstract class RetexturingBakedModel extends ForwardingBakedModel {
 	}
 	
 	@Override
-	public void emitItemQuads(ItemStack stack, Supplier<Random> randomSupplier, RenderContext context) {
+	public void emitItemQuads(ItemStack stack, Supplier<RandomSource> randomSupplier, RenderContext context) {
 		//cheeky: if the item has NBT data, pluck out the blockstate from it & look up the item color provider
 		//none of this is accessible unless you're in creative mode doing ctrl-pick btw
 		CamoAppearance appearance;
@@ -170,7 +172,7 @@ public abstract class RetexturingBakedModel extends ForwardingBakedModel {
 		BlockState theme = ReFramedEntity.readStateFromItem(stack, theme_index);
 		if(!theme.isAir()) {
 			appearance = appearance_manager.getCamoAppearance(null, theme, null, theme_index, true);
-			tint = 0xFF000000 | ((MinecraftAccessor) MinecraftClient.getInstance()).getItemColors().getColor(new ItemStack(theme.getBlock()), 0);
+			tint = 0xFF000000 | MinecraftClient.getInstance().getItemColors().getColor(new ItemStack(theme.getBlock()), 0);
 		} else {
 			appearance = appearance_manager.getDefaultAppearance(theme_index);
 			tint = 0xFFFFFFFF;
@@ -188,13 +190,13 @@ public abstract class RetexturingBakedModel extends ForwardingBakedModel {
 		}
 	}
 
-	public boolean useAmbientOcclusion(BlockRenderView view, BlockPos pos) {
+	public boolean useAmbientOcclusion(BlockAndTintGetter view, BlockPos pos) {
 		if (!(view.getBlockEntity(pos) instanceof ThemeableBlockEntity frame_entity)) return false;
         BlockState theme = frame_entity.getTheme(theme_index);
 		CamoAppearance appearance = appearance_manager
 			.getCamoAppearance(view, theme, pos, theme_index, false);
 
-        long seed = theme.getRenderingSeed(pos);
+        long seed = theme.getSeed(pos);
         int model_id = 0;
         if (appearance instanceof WeightedComputedAppearance wca) model_id = wca.getAppearanceIndex(seed);
 		return appearance.getAO(model_id);

@@ -5,9 +5,9 @@ import fr.adrien1106.reframed.block.*;
 import fr.adrien1106.reframed.generator.block.*;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider.BlockTagProvider;
-import net.minecraft.block.Block;
-import net.minecraft.registry.RegistryWrapper.WrapperLookup;
-import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.core.HolderLookup.Provider;
+import net.minecraft.tags.BlockTags;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,16 +23,16 @@ public class GBlockTag extends BlockTagProvider {
         providers.put(ReFramedPostFenceBlock.class, new PostFence());
     }
 
-    public GBlockTag(FabricDataOutput output, CompletableFuture<WrapperLookup> registries) {
+    public GBlockTag(FabricDataOutput output, CompletableFuture<Provider> registries) {
         super(output, registries);
     }
 
     @Override
-    protected void configure(WrapperLookup arg) {
-        FabricTagBuilder builder = getOrCreateTagBuilder(BlockTags.AXE_MINEABLE);
+    protected void addTags(Provider arg) {
+        FabricTagBuilder builder = tag(BlockTags.MINEABLE_WITH_AXE);
         ReFramed.BLOCKS.forEach((block) -> {
             if (providers.containsKey(block.getClass()))
-                providers.get(block.getClass()).getTags().forEach((tag) -> getOrCreateTagBuilder(tag).add(block));
+                providers.get(block.getClass()).getTags().forEach((tag) -> tag(tag).add(block));
             builder.add(block);
         });
     }

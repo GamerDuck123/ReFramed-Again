@@ -1,26 +1,27 @@
 package fr.adrien1106.reframed.block;
 
 import fr.adrien1106.reframed.util.VoxelHelper;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.ShapeContext;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.world.BlockView;
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.level.BlockGetter;
 
-import static net.minecraft.state.property.Properties.AXIS;
+import static net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS;
 
 public class ReFramedPillarBlock extends PillarReFramedBlock {
 
     public static final VoxelShape[] PILLAR_VOXELS;
 
-    public ReFramedPillarBlock(Settings settings) {
+    public ReFramedPillarBlock(Properties settings) {
         super(settings);
     }
 
     @Override
-    public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
-        return getPillarShape(state.get(AXIS));
+    public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+        return getPillarShape(state.getValue(AXIS));
     }
 
     public static VoxelShape getPillarShape(Direction.Axis axis) {
@@ -28,7 +29,7 @@ public class ReFramedPillarBlock extends PillarReFramedBlock {
     }
 
     static {
-        final VoxelShape PILLAR = createCuboidShape(0, 4, 4, 16, 12, 12);
+        final VoxelShape PILLAR = box(0, 4, 4, 16, 12, 12);
         PILLAR_VOXELS = VoxelHelper.VoxelListBuilder.create(PILLAR, 3)
             .add(VoxelHelper::rotateZ)
             .add(VoxelHelper::rotateX)

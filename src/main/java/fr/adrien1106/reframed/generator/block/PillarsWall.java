@@ -6,35 +6,35 @@ import fr.adrien1106.reframed.generator.GBlockstate;
 import fr.adrien1106.reframed.generator.RecipeSetter;
 import fr.adrien1106.reframed.generator.TagGetter;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricRecipeProvider;
-import net.minecraft.block.Block;
-import net.minecraft.data.client.BlockStateSupplier;
-import net.minecraft.data.client.MultipartBlockStateSupplier;
-import net.minecraft.data.server.recipe.RecipeExporter;
-import net.minecraft.data.server.recipe.RecipeProvider;
-import net.minecraft.data.server.recipe.ShapelessRecipeJsonBuilder;
-import net.minecraft.item.ItemConvertible;
-import net.minecraft.recipe.book.RecipeCategory;
-import net.minecraft.registry.tag.BlockTags;
-import net.minecraft.registry.tag.TagKey;
-import net.minecraft.util.Identifier;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.data.models.blockstates.BlockStateGenerator;
+import net.minecraft.data.models.blockstates.MultiPartGenerator;
+import net.minecraft.data.recipes.RecipeOutput;
+import net.minecraft.data.recipes.RecipeProvider;
+import net.minecraft.data.recipes.ShapelessRecipeBuilder;
+import net.minecraft.world.level.ItemLike;
+import net.minecraft.data.recipes.RecipeCategory;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.List;
 
-import static net.minecraft.block.enums.WallShape.*;
-import static net.minecraft.data.client.VariantSettings.Rotation.*;
-import static net.minecraft.state.property.Properties.*;
+import static net.minecraft.world.level.block.state.properties.WallSide.*;
+import static net.minecraft.data.models.blockstates.VariantProperties.Rotation.*;
+import static net.minecraft.world.level.block.state.properties.BlockStateProperties.*;
 
 public class PillarsWall implements RecipeSetter, TagGetter, BlockStateProvider {
 
     @Override
-    public void setRecipe(RecipeExporter exporter, ItemConvertible convertible) {
-        RecipeProvider.offerStonecuttingRecipe(exporter, RecipeCategory.BUILDING_BLOCKS, convertible, ReFramed.CUBE, 1);
-        ShapelessRecipeJsonBuilder
-            .create(RecipeCategory.BUILDING_BLOCKS, convertible, 2)
-            .input(ReFramed.WALL, 2)
-            .criterion(FabricRecipeProvider.hasItem(ReFramed.CUBE), FabricRecipeProvider.conditionsFromItem(ReFramed.CUBE))
-            .criterion(FabricRecipeProvider.hasItem(convertible), FabricRecipeProvider.conditionsFromItem(convertible))
-            .offerTo(exporter);
+    public void setRecipe(RecipeOutput exporter, ItemLike convertible) {
+        RecipeProvider.stonecutterResultFromBase(exporter, RecipeCategory.BUILDING_BLOCKS, convertible, ReFramed.CUBE, 1);
+        ShapelessRecipeBuilder
+            .shapeless(RecipeCategory.BUILDING_BLOCKS, convertible, 2)
+            .requires(ReFramed.WALL, 2)
+            .unlockedBy(FabricRecipeProvider.getHasName(ReFramed.CUBE), FabricRecipeProvider.has(ReFramed.CUBE))
+            .unlockedBy(FabricRecipeProvider.getHasName(convertible), FabricRecipeProvider.has(convertible))
+            .save(exporter);
     }
 
     @Override
@@ -43,40 +43,40 @@ public class PillarsWall implements RecipeSetter, TagGetter, BlockStateProvider 
     }
 
     @Override
-    public BlockStateSupplier getMultipart(Block block) {
-        Identifier
+    public BlockStateGenerator getMultipart(Block block) {
+        ResourceLocation
             low = ReFramed.id("pillars_wall_low_special"),
             tall = ReFramed.id("pillars_wall_tall_special"),
             none = ReFramed.id("wall_pillar_none_special");
-        return MultipartBlockStateSupplier.create(block)
+        return MultiPartGenerator.multiPart(block)
             // PILLAR CORE
             .with(GBlockstate.variant(ReFramed.id("wall_core_special"), true, R0, R0))
             // LOW
-            .with(GBlockstate.when(NORTH_WALL_SHAPE, LOW),
+            .with(GBlockstate.when(NORTH_WALL, LOW),
                 GBlockstate.variant(low, true, R0, R0))
-            .with(GBlockstate.when(EAST_WALL_SHAPE, LOW),
+            .with(GBlockstate.when(EAST_WALL, LOW),
                 GBlockstate.variant(low, true, R0, R90))
-            .with(GBlockstate.when(SOUTH_WALL_SHAPE, LOW),
+            .with(GBlockstate.when(SOUTH_WALL, LOW),
                 GBlockstate.variant(low, true, R0, R180))
-            .with(GBlockstate.when(WEST_WALL_SHAPE, LOW),
+            .with(GBlockstate.when(WEST_WALL, LOW),
                 GBlockstate.variant(low, true, R0, R270))
             // TALL
-            .with(GBlockstate.when(NORTH_WALL_SHAPE, TALL),
+            .with(GBlockstate.when(NORTH_WALL, TALL),
                 GBlockstate.variant(tall, true, R0, R0))
-            .with(GBlockstate.when(EAST_WALL_SHAPE, TALL),
+            .with(GBlockstate.when(EAST_WALL, TALL),
                 GBlockstate.variant(tall, true, R0, R90))
-            .with(GBlockstate.when(SOUTH_WALL_SHAPE, TALL),
+            .with(GBlockstate.when(SOUTH_WALL, TALL),
                 GBlockstate.variant(tall, true, R0, R180))
-            .with(GBlockstate.when(WEST_WALL_SHAPE, TALL),
+            .with(GBlockstate.when(WEST_WALL, TALL),
                 GBlockstate.variant(tall, true, R0, R270))
             // PILLAR NONE
-            .with(GBlockstate.when(NORTH_WALL_SHAPE, NONE),
+            .with(GBlockstate.when(NORTH_WALL, NONE),
                 GBlockstate.variant(none, true, R0, R0))
-            .with(GBlockstate.when(EAST_WALL_SHAPE, NONE),
+            .with(GBlockstate.when(EAST_WALL, NONE),
                 GBlockstate.variant(none, true, R0, R90))
-            .with(GBlockstate.when(SOUTH_WALL_SHAPE, NONE),
+            .with(GBlockstate.when(SOUTH_WALL, NONE),
                 GBlockstate.variant(none, true, R0, R180))
-            .with(GBlockstate.when(WEST_WALL_SHAPE, NONE),
+            .with(GBlockstate.when(WEST_WALL, NONE),
                 GBlockstate.variant(none, true, R0, R270));
     }
 }

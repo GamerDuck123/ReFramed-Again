@@ -91,10 +91,11 @@ void chooseRuntimeOnly(dep) {
 
 dependencies {
 	// To change the versions see the gradle.properties file
-	include(implementation(annotationProcessor("io.github.llamalad7:mixinextras-fabric:0.2.2")))
+	include(implementation(annotationProcessor("io.github.llamalad7:mixinextras-fabric:0.5.4")))
 	minecraft "com.mojang:minecraft:${sc.current.version}"
 	if (obfuscated) {
-		mappings "net.fabricmc:yarn:${project.property("mod.yarn_mappings")}:v2"
+		mappings loom.officialMojangMappings()
+//		mappings "net.fabricmc:yarn:${project.property("mod.yarn_mappings")}:v2"
 	}
 
 	chooseImplementation "net.fabricmc:fabric-loader:${project.property("mod.loader_version")}"

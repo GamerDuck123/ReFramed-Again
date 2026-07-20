@@ -1,46 +1,47 @@
 package fr.adrien1106.reframed.block;
 
 import fr.adrien1106.reframed.ReFramed;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.loot.context.LootContextParameterSet;
-import net.minecraft.state.StateManager;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.block.state.StateDefinition;
 
 import java.util.List;
 
-import static net.minecraft.state.property.Properties.LAYERS;
+import static net.minecraft.world.level.block.state.properties.BlockStateProperties.LAYERS;
 
 public abstract class HalfLayerDoubleReFramedBlock extends EdgeDoubleReFramedBlock {
 
-    public HalfLayerDoubleReFramedBlock(Settings settings) {
+    public HalfLayerDoubleReFramedBlock(Properties settings) {
         super(settings);
-        setDefaultState(getDefaultState().with(LAYERS, 1));
+        registerDefaultState(defaultBlockState().setValue(LAYERS, 1));
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public List<ItemStack> getDroppedStacks(BlockState state, LootContextParameterSet.Builder builder) {
-        List<ItemStack> drops = super.getDroppedStacks(state, builder);
-        if (state.get(LAYERS) > 1)
-            drops.add(new ItemStack(ReFramed.HALF_LAYER, state.get(LAYERS)-1));
+    public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+        List<ItemStack> drops = super.getDrops(state, builder);
+        if (state.getValue(LAYERS) > 1)
+            drops.add(new ItemStack(ReFramed.HALF_LAYER, state.getValue(LAYERS)-1));
         return drops;
     }
 
     @Override
-    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
-        super.appendProperties(builder.add(LAYERS));
+    protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder builder) {
+        super.createBlockStateDefinition(builder.add(LAYERS));
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public boolean canReplace(BlockState state, ItemPlacementContext context) {
+    public boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
         if (context.getPlayer() == null
-            || context.getPlayer().isSneaking()
-            || !(context.getStack().getItem() instanceof BlockItem block_item)
+            || context.getPlayer().isShiftKeyDown()
+            || !(context.getItemInHand().getItem() instanceof BlockItem block_item)
         ) return false;
-        return block_item.getBlock() == ReFramed.HALF_LAYER && state.get(LAYERS) < 8;
+        return block_item.getBlock() == ReFramed.HALF_LAYER && state.getValue(LAYERS) < 8;
     }
 }

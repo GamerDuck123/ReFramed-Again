@@ -4,145 +4,152 @@ import fr.adrien1106.reframed.ReFramed;
 import fr.adrien1106.reframed.util.VoxelHelper;
 import fr.adrien1106.reframed.util.blocks.BlockHelper;
 import fr.adrien1106.reframed.util.blocks.Edge;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.ShapeContext;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.state.StateManager;
-import net.minecraft.util.BlockMirror;
-import net.minecraft.util.BlockRotation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.world.BlockView;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.level.BlockGetter;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
+// TODO(Ravel): ambiguous static import, members with name VoxelListBuilder have different new names
+//
+// TODO(Ravel): ambiguous static import, members with name VoxelListBuilder have different new names
+//
+// TODO(Ravel): ambiguous static import, members with name VoxelListBuilder have different new names
+//
 import static fr.adrien1106.reframed.util.VoxelHelper.VoxelListBuilder;
 import static fr.adrien1106.reframed.util.blocks.BlockProperties.EDGE;
 import static fr.adrien1106.reframed.util.blocks.BlockProperties.EDGE_FACE;
-import static net.minecraft.state.property.Properties.*;
+import static net.minecraft.world.level.block.state.properties.BlockStateProperties.*;
 
 public class ReFramedHalfLayerBlock extends LayeredReFramedBlock {
 
     public static final VoxelShape[] HALF_LAYER_VOXELS;
 
-    public ReFramedHalfLayerBlock(Settings settings) {
+    public ReFramedHalfLayerBlock(Properties settings) {
         super(settings);
-        setDefaultState(getDefaultState().with(EDGE, Edge.NORTH_DOWN).with(EDGE_FACE, 0));
+        registerDefaultState(defaultBlockState().setValue(EDGE, Edge.NORTH_DOWN).setValue(EDGE_FACE, 0));
     }
 
     @Override
-    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
-        super.appendProperties(builder.add(EDGE, EDGE_FACE));
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder.add(EDGE, EDGE_FACE));
     }
 
     @Override
-    public boolean canReplace(BlockState state, ItemPlacementContext context) {
-        if (super.canReplace(state, context)) return true;
+    public boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
+        if (super.canBeReplaced(state, context)) return true;
 
         if (context.getPlayer() == null
-            || context.getPlayer().isSneaking()
-            || !(context.getStack().getItem() instanceof BlockItem block_item)
+            || context.getPlayer().isShiftKeyDown()
+            || !(context.getItemInHand().getItem() instanceof BlockItem block_item)
         ) return false;
 
-        Edge edge = state.get(EDGE);
-        Direction face = edge.getDirection(state.get(EDGE_FACE));
+        Edge edge = state.getValue(EDGE);
+        Direction face = edge.getDirection(state.getValue(EDGE_FACE));
         if (block_item.getBlock() == ReFramed.SLAB)
             return ReFramed.SLAB
                 .matchesShape(
-                    context.getHitPos(),
-                    context.getBlockPos(),
-                    ReFramed.SLAB.getDefaultState().with(FACING, edge.getOtherDirection(face).getOpposite())
+                    context.getClickLocation(),
+                    context.getClickedPos(),
+                    ReFramed.SLAB.defaultBlockState().setValue(FACING, edge.getOtherDirection(face).getOpposite())
                 );
 
         if (block_item.getBlock() == ReFramed.STEP)
             return ReFramed.STEP
                 .matchesShape(
-                    context.getHitPos(),
-                    context.getBlockPos(),
-                    ReFramed.STEP.getDefaultState().with(EDGE, edge.getOpposite(face))
+                    context.getClickLocation(),
+                    context.getClickedPos(),
+                    ReFramed.STEP.defaultBlockState().setValue(EDGE, edge.getOpposite(face))
                 );
 
         return false;
     }
 
     @Override
-    public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
+    public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
         return getHalfLayerShape(
-            state.get(EDGE),
-            state.get(EDGE_FACE),
-            state.get(LAYERS)
+            state.getValue(EDGE),
+            state.getValue(EDGE_FACE),
+            state.getValue(LAYERS)
         );
     }
 
     @Override
-    public @Nullable BlockState getPlacementState(ItemPlacementContext ctx) {
-        BlockState previous = ctx.getWorld().getBlockState(ctx.getBlockPos());
-        BlockState state = super.getPlacementState(ctx);
+    public @Nullable BlockState getStateForPlacement(BlockPlaceContext ctx) {
+        BlockState previous = ctx.getLevel().getBlockState(ctx.getClickedPos());
+        BlockState state = super.getStateForPlacement(ctx);
 
-        if (previous.isOf(this))
+        if (previous.is(this))
             return state;
 
-        if (previous.isOf(ReFramed.SLABS_HALF_LAYER) || previous.isOf(ReFramed.STEPS_HALF_LAYER))
-            return previous.with(LAYERS, Math.min(8, previous.get(LAYERS) + 1));
+        if (previous.is(ReFramed.SLABS_HALF_LAYER) || previous.is(ReFramed.STEPS_HALF_LAYER))
+            return previous.setValue(LAYERS, Math.min(8, previous.getValue(LAYERS) + 1));
 
-        if (previous.isOf(ReFramed.SLAB)) {
-            Direction face = previous.get(FACING);
+        if (previous.is(ReFramed.SLAB)) {
+            Direction face = previous.getValue(FACING);
             Edge edge;
-            if (face.getAxis() == ctx.getSide().getAxis()) {
+            if (face.getAxis() == ctx.getClickedFace().getAxis()) {
                 edge = BlockHelper.getPlacementEdge(ctx);
-                if (face == ctx.getSide()) edge = edge.getOpposite(edge.getOtherDirection(ctx.getSide()));
-            } else edge = Edge.getByDirections(face, ctx.getSide().getOpposite());
+                if (face == ctx.getClickedFace()) edge = edge.getOpposite(edge.getOtherDirection(ctx.getClickedFace()));
+            } else edge = Edge.getByDirections(face, ctx.getClickedFace().getOpposite());
 
-            return ReFramed.SLABS_HALF_LAYER.getDefaultState()
-                .with(EDGE, edge)
-                .with(EDGE_FACE, edge.getDirectionIndex(face))
-                .with(WATERLOGGED, previous.get(WATERLOGGED));
+            return ReFramed.SLABS_HALF_LAYER.defaultBlockState()
+                .setValue(EDGE, edge)
+                .setValue(EDGE_FACE, edge.getDirectionIndex(face))
+                .setValue(WATERLOGGED, previous.getValue(WATERLOGGED));
         }
 
-        if (previous.isOf(ReFramed.STEP)) {
+        if (previous.is(ReFramed.STEP)) {
             int face_index = 0;
-            Edge edge = previous.get(EDGE);
+            Edge edge = previous.getValue(EDGE);
             if (!ReFramed.STEP.matchesShape(
-                ctx.getHitPos(),
-                ctx.getBlockPos(),
-                ReFramed.STEP.getDefaultState().with(EDGE, edge.getOpposite(1))
+                ctx.getClickLocation(),
+                ctx.getClickedPos(),
+                ReFramed.STEP.defaultBlockState().setValue(EDGE, edge.getOpposite(1))
             )) face_index = 1;
-            return ReFramed.STEPS_HALF_LAYER.getDefaultState()
-                .with(EDGE, edge)
-                .with(EDGE_FACE, face_index)
-                .with(WATERLOGGED, previous.get(WATERLOGGED));
+            return ReFramed.STEPS_HALF_LAYER.defaultBlockState()
+                .setValue(EDGE, edge)
+                .setValue(EDGE_FACE, face_index)
+                .setValue(WATERLOGGED, previous.getValue(WATERLOGGED));
         }
 
         Edge edge = BlockHelper.getPlacementEdge(ctx);
-        return state.with(EDGE, edge).with(EDGE_FACE, edge.getDirectionIndex(ctx.getSide().getOpposite()));
+        return state.setValue(EDGE, edge).setValue(EDGE_FACE, edge.getDirectionIndex(ctx.getClickedFace().getOpposite()));
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public BlockState rotate(BlockState state, BlockRotation rotation) {
-        Edge edge = state.get(EDGE);
-        Direction face = rotation.rotate(edge.getDirection(state.get(EDGE_FACE)));
+    public BlockState rotate(BlockState state, Rotation rotation) {
+        Edge edge = state.getValue(EDGE);
+        Direction face = rotation.rotate(edge.getDirection(state.getValue(EDGE_FACE)));
         edge = edge.rotate(rotation);
-        return state.with(EDGE, edge).with(EDGE_FACE, edge.getDirectionIndex(face));
+        return state.setValue(EDGE, edge).setValue(EDGE_FACE, edge.getDirectionIndex(face));
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public BlockState mirror(BlockState state, BlockMirror mirror) {
-        Edge edge = state.get(EDGE);
-        Direction face = mirror.apply(edge.getDirection(state.get(EDGE_FACE)));
+    public BlockState mirror(BlockState state, Mirror mirror) {
+        Edge edge = state.getValue(EDGE);
+        Direction face = mirror.mirror(edge.getDirection(state.getValue(EDGE_FACE)));
         edge = edge.mirror(mirror);
-        return state.with(EDGE, edge).with(EDGE_FACE, edge.getDirectionIndex(face));
+        return state.setValue(EDGE, edge).setValue(EDGE_FACE, edge.getDirectionIndex(face));
     }
 
     @Override
     public Map<Integer, Integer> getThemeMap(BlockState state, BlockState new_state) {
-        if (new_state.isOf(ReFramed.SLABS_HALF_LAYER)
-            || new_state.isOf(ReFramed.STEPS_HALF_LAYER)
+        if (new_state.is(ReFramed.SLABS_HALF_LAYER)
+            || new_state.is(ReFramed.STEPS_HALF_LAYER)
         ) return Map.of(1, 2);
         return super.getThemeMap(state, new_state);
     }
@@ -152,14 +159,14 @@ public class ReFramedHalfLayerBlock extends LayeredReFramedBlock {
     }
 
     static {
-        VoxelListBuilder builder = VoxelListBuilder.create(createCuboidShape(0, 0, 0, 16, 8, 2), 192)
-            .add(createCuboidShape(0, 0, 0, 16, 8, 4))
-            .add(createCuboidShape(0, 0, 0, 16, 8, 6))
-            .add(createCuboidShape(0, 0, 0, 16, 8, 8))
-            .add(createCuboidShape(0, 0, 0, 16, 8, 10))
-            .add(createCuboidShape(0, 0, 0, 16, 8, 12))
-            .add(createCuboidShape(0, 0, 0, 16, 8, 14))
-            .add(createCuboidShape(0, 0, 0, 16, 8, 16));
+        VoxelListBuilder builder = VoxelListBuilder.create(box(0, 0, 0, 16, 8, 2), 192)
+            .add(box(0, 0, 0, 16, 8, 4))
+            .add(box(0, 0, 0, 16, 8, 6))
+            .add(box(0, 0, 0, 16, 8, 8))
+            .add(box(0, 0, 0, 16, 8, 10))
+            .add(box(0, 0, 0, 16, 8, 12))
+            .add(box(0, 0, 0, 16, 8, 14))
+            .add(box(0, 0, 0, 16, 8, 16));
 
         for (int i = 0; i < 8; i++) {
             builder.add(i, VoxelHelper::rotateCX, VoxelHelper::mirrorZ);

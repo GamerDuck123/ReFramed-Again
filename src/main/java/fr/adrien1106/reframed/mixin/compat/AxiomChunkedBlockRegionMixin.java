@@ -11,21 +11,21 @@ import fr.adrien1106.reframed.util.mixin.IAxiomChunkedBlockRegionMixin;
 import fr.adrien1106.reframed.util.mixin.IMultipartBakedModelMixin;
 import fr.adrien1106.reframed.util.mixin.ThemedBlockEntity;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.render.block.BlockRenderManager;
-import net.minecraft.client.render.model.BakedModel;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.BlockRenderView;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import net.minecraft.client.Camera;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.block.BlockRenderDispatcher;
+import net.minecraft.client.resources.model.BakedModel;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.BlockAndTintGetter;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
@@ -74,16 +74,16 @@ public abstract class AxiomChunkedBlockRegionMixin implements IAxiomChunkedBlock
         method = "renderBlock",
         at = @At(
             value = "INVOKE_ASSIGN",
-            target = "Lnet/minecraft/client/render/block/BlockRenderManager;getModel(Lnet/minecraft/block/BlockState;)Lnet/minecraft/client/render/model/BakedModel;",
+            target = "Lnet/minecraft/client/renderer/block/BlockRenderDispatcher;getBlockModel(Lnet/minecraft/world/level/block/state/BlockState;)Lnet/minecraft/client/resources/model/BakedModel;",
             shift = At.Shift.AFTER
         ),
         cancellable = true)
-    private static void onRenderBlock(BufferBuilder blockBuilder, BlockRenderManager renderer, BlockPos.Mutable pos, Random rand, MatrixStack matrices, BlockRenderView world, Matrix4f currentPoseMatrix, Matrix4f basePoseMatrix, int x, int y, int z, BlockState state, boolean useAmbientOcclusion, CallbackInfo ci, @Local BakedModel model) {
+    private static void onRenderBlock(BufferBuilder blockBuilder, BlockRenderDispatcher renderer, BlockPos.MutableBlockPos pos, RandomSource rand, PoseStack matrices, BlockAndTintGetter world, Matrix4f currentPoseMatrix, Matrix4f basePoseMatrix, int x, int y, int z, BlockState state, boolean useAmbientOcclusion, CallbackInfo ci, @Local BakedModel model) {
         List<BakedModel> models;
         if ((models = getModels(model, state)).isEmpty()) return;
 
         DefaultList<BlockState> themes = new DefaultList<>(
-            Blocks.AIR.getDefaultState(),
+            Blocks.AIR.defaultBlockState(),
             world.getBlockEntity(pos) instanceof ThemedBlockEntity themed
                 ? themed.getThemes()
                 : List.of()
@@ -93,10 +93,10 @@ public abstract class AxiomChunkedBlockRegionMixin implements IAxiomChunkedBlock
             : Stream.of((RetexturingBakedModel)m)
         ).forEach(m -> {
             m.setCamo(world, themes.get(m.getThemeIndex() - 1), pos);
-            if (useAmbientOcclusion && state.getLuminance() == 0 && m.useAmbientOcclusion()) renderer.getModelRenderer()
-                    .renderSmooth(world, m, state, pos, matrices, blockBuilder, true, rand, state.getRenderingSeed(pos), OverlayTexture.DEFAULT_UV);
+            if (useAmbientOcclusion && state.getLightEmission() == 0 && m.useAmbientOcclusion()) renderer.getModelRenderer()
+                    .tesselateWithAO(world, m, state, pos, matrices, blockBuilder, true, rand, state.getSeed(pos), OverlayTexture.NO_OVERLAY);
             else renderer.getModelRenderer()
-                    .renderFlat(world, m, state, pos, matrices, blockBuilder, true, rand, state.getRenderingSeed(pos), OverlayTexture.DEFAULT_UV);
+                    .tesselateWithoutAO(world, m, state, pos, matrices, blockBuilder, true, rand, state.getSeed(pos), OverlayTexture.NO_OVERLAY);
         });
         ci.cancel();
     }
@@ -113,7 +113,7 @@ public abstract class AxiomChunkedBlockRegionMixin implements IAxiomChunkedBlock
             inverse_transform.transformY(pos.getX(), pos.getY(), pos.getZ()),
             inverse_transform.transformZ(pos.getX(), pos.getY(), pos.getZ())
         );
-        NbtCompound compound;
+        CompoundTag compound;
         if (!block_entities.containsKey(key)
             || !(compound = block_entities.get(key).decompress()).contains(BLOCKSTATE_KEY + 1)
         ) return;
@@ -124,7 +124,7 @@ public abstract class AxiomChunkedBlockRegionMixin implements IAxiomChunkedBlock
         method = "uploadDirty",
         at = @At("HEAD")
     )
-    private void onUploadDirty(Camera camera, Vec3d translation, boolean canResort, boolean canUseAmbientOcclusion, CallbackInfo ci) {
+    private void onUploadDirty(Camera camera, Vec3 translation, boolean canResort, boolean canUseAmbientOcclusion, CallbackInfo ci) {
         if (transform == null) inverse_transform = new IntMatrix();
         else inverse_transform = transform.copy();
         inverse_transform.invert();

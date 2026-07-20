@@ -4,8 +4,8 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.renderer.v1.mesh.MutableQuadView;
 import net.fabricmc.fabric.api.renderer.v1.mesh.QuadView;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.core.Direction;
+import net.minecraft.util.Mth;
 import org.joml.Vector3f;
 
 @Environment(EnvType.CLIENT)
@@ -23,20 +23,20 @@ public record QuadPosBounds(float min_x, float max_x, float min_y, float max_y, 
         // Checks if the Dimensions are either 0 or 1 except for the Axis dimension
         Direction.Axis axis = quad.nominalFace().getAxis();
         if (check_full && (axis == Direction.Axis.X || (
-                (MathHelper.approximatelyEquals(x0, 0) || MathHelper.approximatelyEquals(x0, 1))
-                && (MathHelper.approximatelyEquals(x1, 0) || MathHelper.approximatelyEquals(x1, 1))
-                && (MathHelper.approximatelyEquals(x2, 0) || MathHelper.approximatelyEquals(x2, 1))
-                && (MathHelper.approximatelyEquals(x3, 0) || MathHelper.approximatelyEquals(x3, 1))
+                (Mth.equal(x0, 0) || Mth.equal(x0, 1))
+                && (Mth.equal(x1, 0) || Mth.equal(x1, 1))
+                && (Mth.equal(x2, 0) || Mth.equal(x2, 1))
+                && (Mth.equal(x3, 0) || Mth.equal(x3, 1))
             )) && (axis == Direction.Axis.Y || (
-                (MathHelper.approximatelyEquals(y0, 0) || MathHelper.approximatelyEquals(y0, 1))
-                && (MathHelper.approximatelyEquals(y1, 0) || MathHelper.approximatelyEquals(y1, 1))
-                && (MathHelper.approximatelyEquals(y2, 0) || MathHelper.approximatelyEquals(y2, 1))
-                && (MathHelper.approximatelyEquals(y3, 0) || MathHelper.approximatelyEquals(y3, 1))
+                (Mth.equal(y0, 0) || Mth.equal(y0, 1))
+                && (Mth.equal(y1, 0) || Mth.equal(y1, 1))
+                && (Mth.equal(y2, 0) || Mth.equal(y2, 1))
+                && (Mth.equal(y3, 0) || Mth.equal(y3, 1))
             )) & (axis == Direction.Axis.Z || (
-                (MathHelper.approximatelyEquals(z0, 0) || MathHelper.approximatelyEquals(z0, 1))
-                && (MathHelper.approximatelyEquals(z1, 0) || MathHelper.approximatelyEquals(z1, 1))
-                && (MathHelper.approximatelyEquals(z2, 0) || MathHelper.approximatelyEquals(z2, 1))
-                && (MathHelper.approximatelyEquals(z3, 0) || MathHelper.approximatelyEquals(z3, 1))
+                (Mth.equal(z0, 0) || Mth.equal(z0, 1))
+                && (Mth.equal(z1, 0) || Mth.equal(z1, 1))
+                && (Mth.equal(z2, 0) || Mth.equal(z2, 1))
+                && (Mth.equal(z3, 0) || Mth.equal(z3, 1))
             ))
         ) return null;
 
@@ -73,9 +73,9 @@ public record QuadPosBounds(float min_x, float max_x, float min_y, float max_y, 
         Vector3f pos = new Vector3f();
         for (int i = 0; i < 4; i++) {
             quad.copyPos(i, pos);
-            pos.x = MathHelper.approximatelyEquals(pos.x, origin_bounds.min_x)? min_x: max_x;
-            pos.y = MathHelper.approximatelyEquals(pos.y, origin_bounds.min_y)? min_y: max_y;
-            pos.z = MathHelper.approximatelyEquals(pos.z, origin_bounds.min_z)? min_z: max_z;
+            pos.x = Mth.equal(pos.x, origin_bounds.min_x)? min_x: max_x;
+            pos.y = Mth.equal(pos.y, origin_bounds.min_y)? min_y: max_y;
+            pos.z = Mth.equal(pos.z, origin_bounds.min_z)? min_z: max_z;
             quad.pos(i, pos);
         }
     }
@@ -83,11 +83,11 @@ public record QuadPosBounds(float min_x, float max_x, float min_y, float max_y, 
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof QuadPosBounds other)) return false;
-        return MathHelper.approximatelyEquals(min_x, other.min_x)
-            && MathHelper.approximatelyEquals(min_y, other.min_y)
-            && MathHelper.approximatelyEquals(min_z, other.min_z)
-            && MathHelper.approximatelyEquals(max_x, other.max_x)
-            && MathHelper.approximatelyEquals(max_y, other.max_y)
-            && MathHelper.approximatelyEquals(max_z, other.max_z);
+        return Mth.equal(min_x, other.min_x)
+            && Mth.equal(min_y, other.min_y)
+            && Mth.equal(min_z, other.min_z)
+            && Mth.equal(max_x, other.max_x)
+            && Mth.equal(max_y, other.max_y)
+            && Mth.equal(max_z, other.max_z);
     }
 }

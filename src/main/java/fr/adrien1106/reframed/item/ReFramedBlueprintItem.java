@@ -2,35 +2,36 @@ package fr.adrien1106.reframed.item;
 
 import fr.adrien1106.reframed.ReFramed;
 import fr.adrien1106.reframed.block.ReFramedEntity;
-import net.minecraft.block.Blocks;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUsageContext;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.item.Item.Properties;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 
 public class ReFramedBlueprintItem extends Item {
-    public ReFramedBlueprintItem(Settings settings) {
+    public ReFramedBlueprintItem(Properties settings) {
         super(settings);
     }
 
     @Override
-    public ActionResult useOnBlock(ItemUsageContext context) {
-        BlockPos pos = context.getBlockPos();
-        World world = context.getWorld();
+    public InteractionResult useOn(UseOnContext context) {
+        BlockPos pos = context.getClickedPos();
+        Level world = context.getLevel();
         if (!(world.getBlockEntity(pos) instanceof ReFramedEntity frame_entity)
             || frame_entity.getThemes().stream().noneMatch(state -> state.getBlock() != Blocks.AIR)
-        ) return ActionResult.PASS;
+        ) return InteractionResult.PASS;
 
-        context.getStack().decrement(1);
-        ItemStack stack = ReFramed.BLUEPRINT_WRITTEN.getDefaultStack();
-        frame_entity.setStackNbt(stack);
-        context.getPlayer().giveItemStack(stack);
-        world.playSound(context.getPlayer(), context.getPlayer().getBlockPos(), SoundEvents.ITEM_BOOK_PUT, SoundCategory.PLAYERS);
+        context.getItemInHand().shrink(1);
+        ItemStack stack = ReFramed.BLUEPRINT_WRITTEN.getDefaultInstance();
+        frame_entity.saveToItem(stack);
+        context.getPlayer().addItem(stack);
+        world.playSound(context.getPlayer(), context.getPlayer().blockPosition(), SoundEvents.BOOK_PUT, SoundSource.PLAYERS);
 
-        return ActionResult.SUCCESS;
+        return InteractionResult.SUCCESS;
     }
 }

@@ -3,7 +3,7 @@ package fr.adrien1106.reframed.generator;
 import fr.adrien1106.reframed.ReFramed;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricBlockLootTableProvider;
-import net.minecraft.registry.Registries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 public class GBlockLoot extends FabricBlockLootTableProvider {
 
@@ -13,6 +13,6 @@ public class GBlockLoot extends FabricBlockLootTableProvider {
 
     @Override
     public void generate() {
-        ReFramed.BLOCKS.forEach(block -> addDrop(block, Registries.ITEM.get(Registries.BLOCK.getId(block))));
+        ReFramed.BLOCKS.forEach(block -> dropOther(block, BuiltInRegistries.ITEM.get(BuiltInRegistries.BLOCK.getKey(block))));
     }
 }

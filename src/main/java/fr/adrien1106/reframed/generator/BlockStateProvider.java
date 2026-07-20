@@ -1,8 +1,8 @@
 package fr.adrien1106.reframed.generator;
 
-import net.minecraft.block.Block;
-import net.minecraft.data.client.BlockStateSupplier;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.data.models.blockstates.BlockStateGenerator;
 
 public interface BlockStateProvider {
-    BlockStateSupplier getMultipart(Block block);
+    BlockStateGenerator getMultipart(Block block);
 }

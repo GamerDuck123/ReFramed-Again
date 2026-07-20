@@ -1,7 +1,7 @@
 package fr.adrien1106.reframed.util.mixin;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.client.render.model.BakedModel;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.resources.model.BakedModel;
 
 import java.util.List;
 

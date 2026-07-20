@@ -1,13 +1,13 @@
 package fr.adrien1106.reframed.util.blocks;
 
-import net.minecraft.util.BlockMirror;
-import net.minecraft.util.BlockRotation;
-import net.minecraft.util.StringIdentifiable;
-import net.minecraft.util.math.Direction;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.util.StringRepresentable;
+import net.minecraft.core.Direction;
 
 import java.util.Arrays;
 
-public enum Edge implements StringIdentifiable {
+public enum Edge implements StringRepresentable {
     NORTH_DOWN("north_down", Direction.NORTH, Direction.DOWN, Direction.Axis.X, 0),
     DOWN_SOUTH("down_south", Direction.DOWN, Direction.SOUTH, Direction.Axis.X, 1),
     SOUTH_UP("south_up", Direction.SOUTH, Direction.UP, Direction.Axis.X, 2),
@@ -35,12 +35,12 @@ public enum Edge implements StringIdentifiable {
         this.ID = id;
     }
 
-    public String asString() {
+    public String getSerializedName() {
         return this.name;
     }
 
     public String toString() {
-        return asString();
+        return getSerializedName();
     }
 
     public Direction getFirstDirection() {
@@ -52,11 +52,11 @@ public enum Edge implements StringIdentifiable {
     }
 
     public Direction getRightDirection() {
-        return Direction.from(axis, Direction.AxisDirection.NEGATIVE);
+        return Direction.fromAxisAndDirection(axis, Direction.AxisDirection.NEGATIVE);
     }
 
     public Direction getLeftDirection() {
-        return Direction.from(axis, Direction.AxisDirection.POSITIVE);
+        return Direction.fromAxisAndDirection(axis, Direction.AxisDirection.POSITIVE);
     }
 
     public Direction getFace() {
@@ -122,17 +122,17 @@ public enum Edge implements StringIdentifiable {
         return getByDirections(direction, getOtherDirection(direction).getOpposite());
     }
 
-    public Edge rotate(BlockRotation rotation) {
+    public Edge rotate(Rotation rotation) {
         return getByDirections(
             rotation.rotate(first_direction),
             rotation.rotate(second_direction)
         );
     }
 
-    public Edge mirror(BlockMirror mirror) {
+    public Edge mirror(Mirror mirror) {
         return getByDirections(
-            mirror.apply(first_direction),
-            mirror.apply(second_direction)
+            mirror.mirror(first_direction),
+            mirror.mirror(second_direction)
         );
     }
 }

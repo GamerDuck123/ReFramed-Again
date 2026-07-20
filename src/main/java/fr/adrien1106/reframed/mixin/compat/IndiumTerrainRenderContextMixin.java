@@ -11,7 +11,7 @@ import link.infra.indium.renderer.render.BlockRenderInfo;
 import link.infra.indium.renderer.render.TerrainRenderContext;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.pipeline.BlockRenderContext;
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
-import net.minecraft.client.render.model.BakedModel;
+import net.minecraft.client.resources.model.BakedModel;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;

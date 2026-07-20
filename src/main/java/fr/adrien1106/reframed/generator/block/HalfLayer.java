@@ -4,15 +4,15 @@ import fr.adrien1106.reframed.ReFramed;
 import fr.adrien1106.reframed.generator.BlockStateProvider;
 import fr.adrien1106.reframed.generator.RecipeSetter;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricRecipeProvider;
-import net.minecraft.block.Block;
-import net.minecraft.data.client.BlockStateSupplier;
-import net.minecraft.data.client.MultipartBlockStateSupplier;
-import net.minecraft.data.server.recipe.RecipeExporter;
-import net.minecraft.data.server.recipe.RecipeProvider;
-import net.minecraft.data.server.recipe.ShapelessRecipeJsonBuilder;
-import net.minecraft.item.ItemConvertible;
-import net.minecraft.recipe.book.RecipeCategory;
-import net.minecraft.util.Identifier;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.data.models.blockstates.BlockStateGenerator;
+import net.minecraft.data.models.blockstates.MultiPartGenerator;
+import net.minecraft.data.recipes.RecipeOutput;
+import net.minecraft.data.recipes.RecipeProvider;
+import net.minecraft.data.recipes.ShapelessRecipeBuilder;
+import net.minecraft.world.level.ItemLike;
+import net.minecraft.data.recipes.RecipeCategory;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.Map;
 
@@ -21,29 +21,29 @@ import static fr.adrien1106.reframed.generator.GBlockstate.when;
 import static fr.adrien1106.reframed.util.blocks.BlockProperties.EDGE;
 import static fr.adrien1106.reframed.util.blocks.BlockProperties.EDGE_FACE;
 import static fr.adrien1106.reframed.util.blocks.Edge.*;
-import static net.minecraft.data.client.VariantSettings.Rotation.*;
-import static net.minecraft.state.property.Properties.LAYERS;
+import static net.minecraft.data.models.blockstates.VariantProperties.Rotation.*;
+import static net.minecraft.world.level.block.state.properties.BlockStateProperties.LAYERS;
 
 public class HalfLayer implements RecipeSetter, BlockStateProvider {
 
     @Override
-    public void setRecipe(RecipeExporter exporter, ItemConvertible convertible) {
-        RecipeProvider.offerStonecuttingRecipe(exporter, RecipeCategory.BUILDING_BLOCKS, convertible, ReFramed.CUBE, 16);
-        ShapelessRecipeJsonBuilder
-            .create(RecipeCategory.BUILDING_BLOCKS, convertible, 2)
-            .input(ReFramed.LAYER)
-            .criterion(FabricRecipeProvider.hasItem(ReFramed.CUBE), FabricRecipeProvider.conditionsFromItem(ReFramed.CUBE))
-            .criterion(FabricRecipeProvider.hasItem(convertible), FabricRecipeProvider.conditionsFromItem(convertible))
-            .offerTo(exporter);
+    public void setRecipe(RecipeOutput exporter, ItemLike convertible) {
+        RecipeProvider.stonecutterResultFromBase(exporter, RecipeCategory.BUILDING_BLOCKS, convertible, ReFramed.CUBE, 16);
+        ShapelessRecipeBuilder
+            .shapeless(RecipeCategory.BUILDING_BLOCKS, convertible, 2)
+            .requires(ReFramed.LAYER)
+            .unlockedBy(FabricRecipeProvider.getHasName(ReFramed.CUBE), FabricRecipeProvider.has(ReFramed.CUBE))
+            .unlockedBy(FabricRecipeProvider.getHasName(convertible), FabricRecipeProvider.has(convertible))
+            .save(exporter);
     }
 
     @Override
-    public BlockStateSupplier getMultipart(Block block) {
+    public BlockStateGenerator getMultipart(Block block) {
         return getMultipart(block, "half_layer");
     }
         
-    public static MultipartBlockStateSupplier getMultipart(Block block, String layer) {
-        Map<Integer, Identifier> layer_model = Map.of(
+    public static MultiPartGenerator getMultipart(Block block, String layer) {
+        Map<Integer, ResourceLocation> layer_model = Map.of(
             1, ReFramed.id(layer + "_2_special"),
             2, ReFramed.id(layer + "_4_special"),
             3, ReFramed.id(layer + "_6_special"),
@@ -53,7 +53,7 @@ public class HalfLayer implements RecipeSetter, BlockStateProvider {
             7, ReFramed.id(layer + "_14_special"),
             8, ReFramed.id(layer + "_16_special")
         );
-        Map<Integer, Identifier> layer_side = Map.of(
+        Map<Integer, ResourceLocation> layer_side = Map.of(
             1, ReFramed.id(layer + "_side_2_special"),
             2, ReFramed.id(layer + "_side_4_special"),
             3, ReFramed.id(layer + "_side_6_special"),
@@ -63,7 +63,7 @@ public class HalfLayer implements RecipeSetter, BlockStateProvider {
             7, ReFramed.id(layer + "_side_14_special"),
             8, ReFramed.id(layer + "_side_16_special")
         );
-        MultipartBlockStateSupplier supplier = MultipartBlockStateSupplier.create(block);
+        MultiPartGenerator supplier = MultiPartGenerator.multiPart(block);
         // DOWN
         layer_model.forEach((i, model) ->
             supplier.with(when(EDGE, DOWN_EAST, EDGE_FACE, 0, LAYERS, i),

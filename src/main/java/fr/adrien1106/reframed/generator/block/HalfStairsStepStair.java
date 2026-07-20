@@ -6,40 +6,40 @@ import fr.adrien1106.reframed.generator.GBlockstate;
 import fr.adrien1106.reframed.generator.RecipeSetter;
 import fr.adrien1106.reframed.util.blocks.Corner;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricRecipeProvider;
-import net.minecraft.block.Block;
-import net.minecraft.data.client.MultipartBlockStateSupplier;
-import net.minecraft.data.server.recipe.RecipeExporter;
-import net.minecraft.data.server.recipe.RecipeProvider;
-import net.minecraft.data.server.recipe.ShapelessRecipeJsonBuilder;
-import net.minecraft.item.ItemConvertible;
-import net.minecraft.recipe.book.RecipeCategory;
-import net.minecraft.util.Identifier;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.data.models.blockstates.MultiPartGenerator;
+import net.minecraft.data.recipes.RecipeOutput;
+import net.minecraft.data.recipes.RecipeProvider;
+import net.minecraft.data.recipes.ShapelessRecipeBuilder;
+import net.minecraft.world.level.ItemLike;
+import net.minecraft.data.recipes.RecipeCategory;
+import net.minecraft.resources.ResourceLocation;
 
 import static fr.adrien1106.reframed.util.blocks.BlockProperties.*;
-import static net.minecraft.data.client.VariantSettings.Rotation.*;
-import static net.minecraft.data.client.VariantSettings.Rotation.R270;
+import static net.minecraft.data.models.blockstates.VariantProperties.Rotation.*;
+import static net.minecraft.data.models.blockstates.VariantProperties.Rotation.R270;
 
 public class HalfStairsStepStair implements RecipeSetter, BlockStateProvider {
 
     @Override
-    public void setRecipe(RecipeExporter exporter, ItemConvertible convertible) {
-        RecipeProvider.offerStonecuttingRecipe(exporter, RecipeCategory.BUILDING_BLOCKS, convertible, ReFramed.CUBE);
-        ShapelessRecipeJsonBuilder
-            .create(RecipeCategory.BUILDING_BLOCKS, convertible)
-            .input(ReFramed.SMALL_CUBE)
-            .input(ReFramed.HALF_STAIR)
-            .criterion(FabricRecipeProvider.hasItem(ReFramed.CUBE), FabricRecipeProvider.conditionsFromItem(ReFramed.CUBE))
-            .criterion(FabricRecipeProvider.hasItem(convertible), FabricRecipeProvider.conditionsFromItem(convertible))
-            .offerTo(exporter);
+    public void setRecipe(RecipeOutput exporter, ItemLike convertible) {
+        RecipeProvider.stonecutterResultFromBase(exporter, RecipeCategory.BUILDING_BLOCKS, convertible, ReFramed.CUBE);
+        ShapelessRecipeBuilder
+            .shapeless(RecipeCategory.BUILDING_BLOCKS, convertible)
+            .requires(ReFramed.SMALL_CUBE)
+            .requires(ReFramed.HALF_STAIR)
+            .unlockedBy(FabricRecipeProvider.getHasName(ReFramed.CUBE), FabricRecipeProvider.has(ReFramed.CUBE))
+            .unlockedBy(FabricRecipeProvider.getHasName(convertible), FabricRecipeProvider.has(convertible))
+            .save(exporter);
     }
 
     @Override
-    public MultipartBlockStateSupplier getMultipart(Block block) {
-        Identifier model_1_id = ReFramed.id("half_stairs_step_stair_1_special");
-        Identifier side_1_id = ReFramed.id("half_stairs_step_stair_side_1_special");
-        Identifier model_2_id = ReFramed.id("half_stairs_step_stair_2_special");
-        Identifier side_2_id = ReFramed.id("half_stairs_step_stair_side_2_special");
-        return MultipartBlockStateSupplier.create(block)
+    public MultiPartGenerator getMultipart(Block block) {
+        ResourceLocation model_1_id = ReFramed.id("half_stairs_step_stair_1_special");
+        ResourceLocation side_1_id = ReFramed.id("half_stairs_step_stair_side_1_special");
+        ResourceLocation model_2_id = ReFramed.id("half_stairs_step_stair_2_special");
+        ResourceLocation side_2_id = ReFramed.id("half_stairs_step_stair_side_2_special");
+        return MultiPartGenerator.multiPart(block)
             // BOTTOM
             // --- 1 ---
             .with(GBlockstate.when(CORNER, Corner.EAST_SOUTH_DOWN, CORNER_FACE, 2, CORNER_FEATURE, 0),

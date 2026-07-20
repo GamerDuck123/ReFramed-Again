@@ -1,9 +1,9 @@
 package fr.adrien1106.reframed.mixin.compat;
 
 import fr.adrien1106.reframed.block.ReFramedEntity;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(targets = "com.moulberry.axiom.render.ChunkRenderOverrider$MappedBlockAndTintGetter")
 public class AxiomMappedBlockAndTintGetterMixin {
 
-    @Shadow @Final private World level;
+    @Shadow @Final private Level level;
 
     @Inject(
         method = "getBlockEntity",

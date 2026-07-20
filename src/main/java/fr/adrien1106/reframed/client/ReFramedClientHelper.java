@@ -9,11 +9,11 @@ import fr.adrien1106.reframed.client.model.apperance.CamoAppearanceManager;
 import net.fabricmc.fabric.api.renderer.v1.Renderer;
 import net.fabricmc.fabric.api.renderer.v1.RendererAccess;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.render.model.UnbakedModel;
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.client.util.SpriteIdentifier;
-import net.minecraft.item.ItemConvertible;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.resources.model.UnbakedModel;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.model.Material;
+import net.minecraft.world.level.ItemLike;
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Function;
@@ -27,15 +27,15 @@ public class ReFramedClientHelper {
 	private final ReFramedModelProvider prov;
 
 
-	public UnbakedRetexturedModel auto(Identifier parent) {
+	public UnbakedRetexturedModel auto(ResourceLocation parent) {
 		return new UnbakedAutoRetexturedModel(parent);
 	}
 
-	public UnbakedRetexturedModel json(Identifier parent) {
+	public UnbakedRetexturedModel json(ResourceLocation parent) {
 		return new UnbakedJsonRetexturedModel(parent);
 	}
 
-	public UnbakedModel autoDouble(Identifier first, Identifier second) {
+	public UnbakedModel autoDouble(ResourceLocation first, ResourceLocation second) {
 		return new UnbakedDoubleRetexturedModel(
 			auto(first),
 			auto(second)
@@ -46,11 +46,11 @@ public class ReFramedClientHelper {
 		prov.addReFramedModel(ReFramed.id(id + "_special"), unbaked);
 	}
 
-	public void assignItemModel(String id, ItemConvertible... item_convertibles) {
+	public void assignItemModel(String id, ItemLike... item_convertibles) {
 		prov.assignItemModel(ReFramed.id(id + "_special"), item_convertibles);
 	}
 
-	public CamoAppearanceManager getCamoAppearanceManager(Function<SpriteIdentifier, Sprite> spriteLookup) {
+	public CamoAppearanceManager getCamoAppearanceManager(Function<Material, TextureAtlasSprite> spriteLookup) {
 		return prov.getCamoAppearanceManager(spriteLookup);
 	}
 

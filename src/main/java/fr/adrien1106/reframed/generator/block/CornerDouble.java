@@ -3,21 +3,21 @@ package fr.adrien1106.reframed.generator.block;
 import fr.adrien1106.reframed.ReFramed;
 import fr.adrien1106.reframed.generator.GBlockstate;
 import fr.adrien1106.reframed.util.blocks.Corner;
-import net.minecraft.block.Block;
-import net.minecraft.data.client.MultipartBlockStateSupplier;
-import net.minecraft.util.Identifier;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.data.models.blockstates.MultiPartGenerator;
+import net.minecraft.resources.ResourceLocation;
 
 import static fr.adrien1106.reframed.util.blocks.BlockProperties.CORNER;
 import static fr.adrien1106.reframed.util.blocks.BlockProperties.CORNER_FACE;
-import static net.minecraft.data.client.VariantSettings.Rotation.*;
+import static net.minecraft.data.models.blockstates.VariantProperties.Rotation.*;
 
 public class CornerDouble {
 
 
-    public static MultipartBlockStateSupplier getMultipart(Block block, String model_name) {
-        Identifier model_id = ReFramed.id(model_name + "_special");
-        Identifier side_id = ReFramed.id(model_name + "_side_special");
-        return MultipartBlockStateSupplier.create(block)
+    public static MultiPartGenerator getMultipart(Block block, String model_name) {
+        ResourceLocation model_id = ReFramed.id(model_name + "_special");
+        ResourceLocation side_id = ReFramed.id(model_name + "_side_special");
+        return MultiPartGenerator.multiPart(block)
             // BOTTOM
             .with(GBlockstate.when(CORNER, Corner.EAST_SOUTH_DOWN, CORNER_FACE, 2),
                 GBlockstate.variant(model_id, true, R0, R0))

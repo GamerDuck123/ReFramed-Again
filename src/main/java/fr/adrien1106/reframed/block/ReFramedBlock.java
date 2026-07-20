@@ -4,31 +4,37 @@ import fr.adrien1106.reframed.ReFramed;
 import fr.adrien1106.reframed.util.blocks.BlockHelper;
 import fr.adrien1106.reframed.util.blocks.ThemeableBlockEntity;
 import net.minecraft.block.*;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.ai.pathing.NavigationType;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtHelper;
-import net.minecraft.registry.Registries;
-import net.minecraft.state.StateManager;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.ItemScatterer;
-import net.minecraft.util.collection.DefaultedList;
-import net.minecraft.util.function.BooleanBiFunction;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.util.shape.VoxelShapes;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.GameRules;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.pathfinder.PathComputationType;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.Containers;
+import net.minecraft.core.NonNullList;
+import net.minecraft.world.phys.shapes.BooleanOp;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Iterator;
@@ -40,83 +46,83 @@ import java.util.stream.IntStream;
 import static fr.adrien1106.reframed.block.ReFramedEntity.BLOCKSTATE_KEY;
 import static fr.adrien1106.reframed.util.blocks.BlockProperties.LIGHT;
 
-public class ReFramedBlock extends Block implements BlockEntityProvider {
+public class ReFramedBlock extends Block implements EntityBlock {
 
-	public ReFramedBlock(Settings settings) {
-		super(settings.dynamicBounds());
-		setDefaultState(getDefaultState().with(LIGHT, false));
+	public ReFramedBlock(Properties settings) {
+		super(settings.dynamicShape());
+		registerDefaultState(defaultBlockState().setValue(LIGHT, false));
 	}
 
 	@Override
 	@SuppressWarnings("deprecation")
-	public int getOpacity(BlockState state, BlockView world, BlockPos pos) {
-		if (state.get(LIGHT)) return 0;
+	public int getLightBlock(BlockState state, BlockGetter world, BlockPos pos) {
+		if (state.getValue(LIGHT)) return 0;
 		if (!(world.getBlockEntity(pos) instanceof ReFramedEntity frame_entity)
-			|| frame_entity.getTheme(0).isOpaque())
+			|| frame_entity.getTheme(0).canOcclude())
 			return world.getMaxLightLevel();
 		return 0;
 	}
 
 	@Override
 	@SuppressWarnings("deprecation")
-	public boolean canPathfindThrough(BlockState state, BlockView world, BlockPos pos, NavigationType type) {
+	public boolean isPathfindable(BlockState state, BlockGetter world, BlockPos pos, PathComputationType type) {
 		return false;
 	}
 
 	@Override
-	public @Nullable BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
-		return ReFramed.REFRAMED_BLOCK_ENTITY.instantiate(pos, state);
+	public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+		return ReFramed.REFRAMED_BLOCK_ENTITY.create(pos, state);
 	}
 
 	@Override
-	protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
-		super.appendProperties(builder.add(LIGHT));
+	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+		super.createBlockStateDefinition(builder.add(LIGHT));
 	}
 	
 	@Nullable
 	@Override
-	public BlockState getPlacementState(ItemPlacementContext ctx) {
-		return ReFramedEntity.getNbtLightLevel(super.getPlacementState(ctx), ctx.getStack());
+	public BlockState getStateForPlacement(BlockPlaceContext ctx) {
+		return ReFramedEntity.getNbtLightLevel(super.getStateForPlacement(ctx), ctx.getItemInHand());
 	}
 	
 	@Override
     @SuppressWarnings("deprecation")
-	public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
-		if (!canUse(world, pos, player)) return ActionResult.PASS;
-		ActionResult result = BlockHelper.useUpgrade(state, world, pos, player, hand);
-		if (result.isAccepted()) return result;
+	public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+		if (!canUse(world, pos, player)) return InteractionResult.PASS;
+		InteractionResult result = BlockHelper.useUpgrade(state, world, pos, player, hand);
+		if (result.consumesAction()) return result;
 		return BlockHelper.useCamo(state, world, pos, player, hand, hit, 1);
 
 	}
 
-	protected boolean canUse(World world, BlockPos pos, PlayerEntity player) {
-		return player.canModifyBlocks() && world.canPlayerModifyAt(player, pos);
+	protected boolean canUse(Level world, BlockPos pos, Player player) {
+		return player.mayBuild() && world.mayInteract(player, pos);
 	}
 	
 	@Override
     @SuppressWarnings("deprecation")
-	public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState new_state, boolean moved) {
-        if (!new_state.isOf(state.getBlock())) world.removeBlockEntity(pos);
+	public void onRemove(BlockState state, Level world, BlockPos pos, BlockState new_state, boolean moved) {
+        if (!new_state.is(state.getBlock())) world.removeBlockEntity(pos);
 
 		if(!(new_state.getBlock() instanceof ReFramedBlock) &&
 			world.getBlockEntity(pos) instanceof ReFramedEntity frame_entity &&
-			world.getGameRules().getBoolean(GameRules.DO_TILE_DROPS)
+			world.getGameRules().getBoolean(GameRules.RULE_DOBLOCKDROPS)
 		) {
-			DefaultedList<ItemStack> drops = DefaultedList.of();
+			NonNullList<ItemStack> drops = NonNullList.create();
 
 			List<BlockState> themes = frame_entity.getThemes();
 			themes.forEach(theme -> {
 				if(theme.getBlock() != Blocks.AIR) drops.add(new ItemStack(theme.getBlock()));
 			});
 
-			ItemScatterer.spawn(world, pos, drops);
+			Containers.dropContents(world, pos, drops);
 		}
-		super.onStateReplaced(state, world, pos, new_state, moved);
+		super.onRemove(state, world, pos, new_state, moved);
 	}
 
-	public void onPlaced(World world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack, BlockState old_state, BlockEntity old_entity) {
+	public void onPlaced(Level world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack, BlockState old_state, BlockEntity old_entity) {
 		if (!(world.getBlockEntity(pos) instanceof ReFramedEntity frame_entity)) {
-			onPlaced(world, pos, state, placer, stack);
+			setPlacedBy(world, pos, state, placer, stack);
 			return;
 		}
 
@@ -131,16 +137,16 @@ public class ReFramedBlock extends Block implements BlockEntityProvider {
 			// apply any changes needed to keep previous properties
 			if (old_frame_entity.emitsLight() && !frame_entity.emitsLight()) {
 				frame_entity.toggleLight();
-				world.setBlockState(pos, state.with(LIGHT, true));
+				world.setBlockAndUpdate(pos, state.setValue(LIGHT, true));
 			}
 			if (old_frame_entity.emitsRedstone() && !frame_entity.emitsRedstone()) {
 				frame_entity.toggleRedstone();
-				world.updateNeighbors(pos, this);
+				world.blockUpdated(pos, this);
 			}
 			if (old_frame_entity.isSolid() && !frame_entity.isSolid()) frame_entity.toggleSolidity();
 
 			// apply themes from item
-			NbtCompound tag = BlockItem.getBlockEntityNbt(stack);
+			CompoundTag tag = BlockItem.getBlockEntityData(stack);
 			if(tag != null) {
 				// determine a list of themes than can be used
 				Iterator<Integer> free_themes = IntStream
@@ -149,67 +155,67 @@ public class ReFramedBlock extends Block implements BlockEntityProvider {
 					.iterator();
 				// apply all the themes possible from item
 				for (int i = 1; tag.contains(BLOCKSTATE_KEY + i) && free_themes.hasNext(); i++) {
-					BlockState theme = NbtHelper.toBlockState(Registries.BLOCK.getReadOnlyWrapper(), tag.getCompound(BLOCKSTATE_KEY + i));
+					BlockState theme = NbtUtils.readBlockState(BuiltInRegistries.BLOCK.asLookup(), tag.getCompound(BLOCKSTATE_KEY + i));
 					if (theme == null || theme.getBlock() == Blocks.AIR) continue;
 					frame_entity.setTheme(theme, free_themes.next());
 				}
 			}
-		} else if(world.isClient) { // prevents flashing with default texture before server sends the update
-			NbtCompound tag = BlockItem.getBlockEntityNbt(stack);
-			if(tag != null) frame_entity.readNbt(tag);
+		} else if(world.isClientSide) { // prevents flashing with default texture before server sends the update
+			CompoundTag tag = BlockItem.getBlockEntityData(stack);
+			if(tag != null) frame_entity.load(tag);
 		}
-		onPlaced(world, pos, state, placer, stack);
+		setPlacedBy(world, pos, state, placer, stack);
 	}
 
-    public boolean matchesShape(Vec3d hit, BlockPos pos, BlockState state) {
+    public boolean matchesShape(Vec3 hit, BlockPos pos, BlockState state) {
         return matchesShape(hit, pos, state, 0);
     }
 
-    public boolean matchesShape(Vec3d hit, BlockPos pos, BlockState state, int i) {
-        Vec3d rel = BlockHelper.getRelativePos(hit, pos);
+    public boolean matchesShape(Vec3 hit, BlockPos pos, BlockState state, int i) {
+        Vec3 rel = BlockHelper.getRelativePos(hit, pos);
         return matchesShape(rel, getShape(state, i));
     }
 
-    public boolean matchesShape(Vec3d rel_hit, VoxelShape shape) {
+    public boolean matchesShape(Vec3 rel_hit, VoxelShape shape) {
         return BlockHelper.cursorMatchesFace(shape, rel_hit);
     }
 	
 	@Override
     @SuppressWarnings("deprecation")
-	public VoxelShape getCollisionShape(BlockState state, BlockView view, BlockPos pos, ShapeContext ctx) {
+	public VoxelShape getCollisionShape(BlockState state, BlockGetter view, BlockPos pos, CollisionContext ctx) {
 		return isGhost(view, pos)
-			? VoxelShapes.empty()
+			? Shapes.empty()
 			: super.getCollisionShape(state, view, pos, ctx);
 	}
 
 	@Override
     @SuppressWarnings("deprecation")
-	public VoxelShape getCullingShape(BlockState state, BlockView view, BlockPos pos) {
+	public VoxelShape getOcclusionShape(BlockState state, BlockGetter view, BlockPos pos) {
 		return isGhost(view, pos)
-			? VoxelShapes.empty()
-			: super.getCullingShape(state, view, pos);
+			? Shapes.empty()
+			: super.getOcclusionShape(state, view, pos);
 	}
 
     @SuppressWarnings("deprecation")
 	public VoxelShape getShape(BlockState state, int i) {
 		// assuming the shape don't need the world and position
-		return getOutlineShape(state, null, null, null);
+		return getShape(state, null, null, null);
 	}
 
-	public boolean isGhost(BlockView view, BlockPos pos) {
+	public boolean isGhost(BlockGetter view, BlockPos pos) {
 		return view.getBlockEntity(pos) instanceof ReFramedEntity be && !be.isSolid();
 	}
 	
 	@Override
     @SuppressWarnings("deprecation")
-	public int getWeakRedstonePower(BlockState state, BlockView view, BlockPos pos, Direction dir) {
+	public int getSignal(BlockState state, BlockGetter view, BlockPos pos, Direction dir) {
 		return view.getBlockEntity(pos) instanceof ReFramedEntity be && be.emitsRedstone() ? 15 : 0;
 	}
 	
 	@Override
     @SuppressWarnings("deprecation")
-	public int getStrongRedstonePower(BlockState state, BlockView view, BlockPos pos, Direction dir) {
-		return getWeakRedstonePower(state, view, pos, dir);
+	public int getDirectSignal(BlockState state, BlockGetter view, BlockPos pos, Direction dir) {
+		return getSignal(state, view, pos, dir);
 	}
 
 	/**
@@ -229,16 +235,16 @@ public class ReFramedBlock extends Block implements BlockEntityProvider {
 		return Map.of();
 	}
 
-	public VoxelShape getShadingShape(BlockState state, BlockView world, BlockPos pos) {
-		if (!(world.getBlockEntity(pos) instanceof ThemeableBlockEntity framed_entity)) return this.getCollisionShape(state, world, pos, ShapeContext.absent());
+	public VoxelShape getShadingShape(BlockState state, BlockGetter world, BlockPos pos) {
+		if (!(world.getBlockEntity(pos) instanceof ThemeableBlockEntity framed_entity)) return this.getCollisionShape(state, world, pos, CollisionContext.empty());
 
 		AtomicInteger i = new AtomicInteger(1);
 		return framed_entity.getThemes().stream().map((theme) -> {
 			int index = i.getAndIncrement();
-			return theme.isTransparent(world, pos) ? VoxelShapes.empty() : this.getShape(state, index);
+			return theme.propagatesSkylightDown(world, pos) ? Shapes.empty() : this.getShape(state, index);
 		}).reduce(
-			VoxelShapes.empty(),
-			(prev, current) -> VoxelShapes.combine(prev, current, BooleanBiFunction.OR)
+			Shapes.empty(),
+			(prev, current) -> Shapes.joinUnoptimized(prev, current, BooleanOp.OR)
 		);
 	}
 }

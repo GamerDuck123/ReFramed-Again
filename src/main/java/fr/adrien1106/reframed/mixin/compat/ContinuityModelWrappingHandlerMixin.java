@@ -2,8 +2,8 @@ package fr.adrien1106.reframed.mixin.compat;
 
 import fr.adrien1106.reframed.block.ReFramedBlock;
 import me.pepperbell.continuity.client.resource.ModelWrappingHandler;
-import net.minecraft.block.Block;
-import net.minecraft.registry.DefaultedRegistry;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.core.DefaultedRegistry;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -17,7 +17,7 @@ public class ContinuityModelWrappingHandlerMixin {
         method = "createBlockStateModelIdMap",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/registry/DefaultedRegistry;iterator()Ljava/util/Iterator;"
+            target = "Lnet/minecraft/core/DefaultedRegistry;iterator()Ljava/util/Iterator;"
         )
     )
     private static Iterator<Block> filterFrames(DefaultedRegistry<Block> registry) {

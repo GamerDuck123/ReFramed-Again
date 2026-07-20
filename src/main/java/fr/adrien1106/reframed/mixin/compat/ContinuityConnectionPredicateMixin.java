@@ -3,9 +3,9 @@ package fr.adrien1106.reframed.mixin.compat;
 import com.llamalad7.mixinextras.sugar.Local;
 import fr.adrien1106.reframed.util.blocks.ThemeableBlockEntity;
 import me.pepperbell.continuity.client.processor.ConnectionPredicate;
-import net.minecraft.block.BlockState;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.BlockRenderView;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockAndTintGetter;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -14,13 +14,13 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public interface ContinuityConnectionPredicateMixin {
 
     @Redirect(
-        method = "shouldConnect(Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/block/BlockState;Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/util/math/Direction;Lnet/minecraft/client/texture/Sprite;)Z",
+        method = "shouldConnect(Lnet/minecraft/world/level/BlockAndTintGetter;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/Direction;Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;)Z",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/world/BlockRenderView;getBlockState(Lnet/minecraft/util/math/BlockPos;)Lnet/minecraft/block/BlockState;"
+            target = "Lnet/minecraft/world/level/BlockAndTintGetter;getBlockState(Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/block/state/BlockState;"
         )
     ) // TODO better connected textures
-    private BlockState getBlockState(BlockRenderView view, BlockPos pos, @Local(argsOnly = true, ordinal = 1) BlockState state) {
+    private BlockState getBlockState(BlockAndTintGetter view, BlockPos pos, @Local(argsOnly = true, ordinal = 1) BlockState state) {
         if (!(view.getBlockEntity(pos) instanceof ThemeableBlockEntity frame_entity)) return view.getBlockState(pos);
         return frame_entity.getThemes()
             .stream()

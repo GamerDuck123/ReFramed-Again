@@ -3,18 +3,19 @@ package fr.adrien1106.reframed.block;
 import fr.adrien1106.reframed.util.VoxelHelper;
 import fr.adrien1106.reframed.util.blocks.BlockHelper;
 import fr.adrien1106.reframed.util.blocks.Edge;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.ShapeContext;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.state.StateManager;
-import net.minecraft.util.BlockMirror;
-import net.minecraft.util.BlockRotation;
-import net.minecraft.util.function.BooleanBiFunction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.util.shape.VoxelShapes;
-import net.minecraft.world.BlockView;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.phys.shapes.BooleanOp;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.level.BlockGetter;
 import org.jetbrains.annotations.Nullable;
 
 import static fr.adrien1106.reframed.block.ReFramedStepBlock.getStepShape;
@@ -24,50 +25,50 @@ public class ReFramedStepsCrossBlock extends WaterloggableReFramedDoubleBlock {
 
     public static VoxelShape[] STEP_CROSS_VOXELS;
 
-    public ReFramedStepsCrossBlock(Settings settings) {
+    public ReFramedStepsCrossBlock(Properties settings) {
         super(settings);
-        setDefaultState(getDefaultState().with(EDGE, Edge.NORTH_DOWN));
+        registerDefaultState(defaultBlockState().setValue(EDGE, Edge.NORTH_DOWN));
     }
 
     @Override
-    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
-        super.appendProperties(builder.add(EDGE));
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder.add(EDGE));
     }
 
     @Override
-    public @Nullable BlockState getPlacementState(ItemPlacementContext ctx) {
-        Edge edge = BlockHelper.getPlacementCorner(ctx).getEdge(ctx.getSide().getOpposite());
-        return super.getPlacementState(ctx).with(EDGE, edge);
-    }
-
-    @Override
-    @SuppressWarnings("deprecation")
-    public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
-        return STEP_CROSS_VOXELS[state.get(EDGE).ordinal()];
+    public @Nullable BlockState getStateForPlacement(BlockPlaceContext ctx) {
+        Edge edge = BlockHelper.getPlacementCorner(ctx).getEdge(ctx.getClickedFace().getOpposite());
+        return super.getStateForPlacement(ctx).setValue(EDGE, edge);
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public BlockState rotate(BlockState state, BlockRotation rotation) {
-        return state.with(EDGE, state.get(EDGE).rotate(rotation));
+    public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+        return STEP_CROSS_VOXELS[state.getValue(EDGE).ordinal()];
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public BlockState mirror(BlockState state, BlockMirror mirror) {
-        return state.with(EDGE, state.get(EDGE).mirror(mirror));
+    public BlockState rotate(BlockState state, Rotation rotation) {
+        return state.setValue(EDGE, state.getValue(EDGE).rotate(rotation));
+    }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    public BlockState mirror(BlockState state, Mirror mirror) {
+        return state.setValue(EDGE, state.getValue(EDGE).mirror(mirror));
     }
 
     @Override
     public VoxelShape getShape(BlockState state, int i) {
-        return getStepShape(i == 1 ? state.get(EDGE): state.get(EDGE).opposite());
+        return getStepShape(i == 1 ? state.getValue(EDGE): state.getValue(EDGE).opposite());
     }
 
     static {
-        VoxelShape STEP_CROSS = VoxelShapes.combineAndSimplify(
+        VoxelShape STEP_CROSS = Shapes.join(
             getStepShape(Edge.NORTH_DOWN),
             getStepShape(Edge.SOUTH_UP),
-            BooleanBiFunction.OR
+            BooleanOp.OR
         );
         STEP_CROSS_VOXELS = VoxelHelper.VoxelListBuilder.create(STEP_CROSS, 12)
             .add(VoxelHelper::rotateX)

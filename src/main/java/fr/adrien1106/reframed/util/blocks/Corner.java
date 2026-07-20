@@ -1,13 +1,13 @@
 package fr.adrien1106.reframed.util.blocks;
 
-import net.minecraft.util.BlockMirror;
-import net.minecraft.util.BlockRotation;
-import net.minecraft.util.StringIdentifiable;
-import net.minecraft.util.math.Direction;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.util.StringRepresentable;
+import net.minecraft.core.Direction;
 
 import java.util.Arrays;
 
-public enum Corner implements StringIdentifiable {
+public enum Corner implements StringRepresentable {
     NORTH_EAST_DOWN("north_east_down", Direction.NORTH, Direction.EAST, Direction.DOWN, 0),
     EAST_SOUTH_DOWN("east_south_down", Direction.EAST, Direction.SOUTH, Direction.DOWN, 1),
     SOUTH_WEST_DOWN("south_west_down", Direction.SOUTH, Direction.WEST, Direction.DOWN, 2),
@@ -31,12 +31,12 @@ public enum Corner implements StringIdentifiable {
         this.ID = id;
     }
 
-    public String asString() {
+    public String getSerializedName() {
         return this.name;
     }
 
     public String toString() {
-        return asString();
+        return getSerializedName();
     }
 
     public Direction getFirstDirection() {
@@ -130,7 +130,7 @@ public enum Corner implements StringIdentifiable {
         return first_direction;
     }
 
-    public Corner rotate(BlockRotation rotation) {
+    public Corner rotate(Rotation rotation) {
         return getByDirections(
             rotation.rotate(first_direction),
             rotation.rotate(second_direction),
@@ -138,11 +138,11 @@ public enum Corner implements StringIdentifiable {
         );
     }
 
-    public Corner mirror(BlockMirror mirror) {
+    public Corner mirror(Mirror mirror) {
         return getByDirections(
-            mirror.apply(first_direction),
-            mirror.apply(second_direction),
-            mirror.apply(third_direction)
+            mirror.mirror(first_direction),
+            mirror.mirror(second_direction),
+            mirror.mirror(third_direction)
         );
     }
 

@@ -1,7 +1,7 @@
 package fr.adrien1106.reframed.generator;
 
-import net.minecraft.block.Block;
-import net.minecraft.registry.tag.TagKey;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.tags.TagKey;
 
 import java.util.List;
 

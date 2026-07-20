@@ -2,220 +2,226 @@ package fr.adrien1106.reframed.block;
 
 import fr.adrien1106.reframed.util.VoxelHelper;
 import net.minecraft.block.*;
-import net.minecraft.block.enums.BlockFace;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.projectile.PersistentProjectileEntity;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.state.StateManager;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.BlockMirror;
-import net.minecraft.util.BlockRotation;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldAccess;
-import net.minecraft.world.WorldView;
-import net.minecraft.world.event.GameEvent;
-import net.minecraft.world.explosion.Explosion;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.AttachFace;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.level.block.state.properties.BlockSetType;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.level.Explosion;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.BiConsumer;
 
-import static net.minecraft.state.property.Properties.*;
+import static net.minecraft.world.level.block.state.properties.BlockStateProperties.*;
 
 public class ReFramedButtonBlock extends WaterloggableReFramedBlock {
 
     public static final VoxelShape[] BUTTON_VOXELS;
 
-    public ReFramedButtonBlock(Settings settings) {
+    public ReFramedButtonBlock(Properties settings) {
         super(settings);
-        setDefaultState(getDefaultState()
-            .with(HORIZONTAL_FACING, Direction.NORTH)
-            .with(BLOCK_FACE, BlockFace.WALL)
-            .with(POWERED, false)
+        registerDefaultState(defaultBlockState()
+            .setValue(HORIZONTAL_FACING, Direction.NORTH)
+            .setValue(ATTACH_FACE, AttachFace.WALL)
+            .setValue(POWERED, false)
         );
     }
 
     @Override
-    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
-        super.appendProperties(builder.add(HORIZONTAL_FACING, BLOCK_FACE, POWERED));
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder.add(HORIZONTAL_FACING, ATTACH_FACE, POWERED));
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public boolean canPlaceAt(BlockState state, WorldView world, BlockPos pos) {
+    public boolean canSurvive(BlockState state, LevelReader world, BlockPos pos) {
         return canPlaceAt(world, pos, getDirection(state).getOpposite());
     }
 
-    public static boolean canPlaceAt(WorldView world, BlockPos pos, Direction direction) {
-        BlockPos other_pos = pos.offset(direction);
-        return world.getBlockState(other_pos).isSideSolidFullSquare(world, other_pos, direction.getOpposite());
+    public static boolean canPlaceAt(LevelReader world, BlockPos pos, Direction direction) {
+        BlockPos other_pos = pos.relative(direction);
+        return world.getBlockState(other_pos).isFaceSturdy(world, other_pos, direction.getOpposite());
     }
 
     @Override
-    public @Nullable BlockState getPlacementState(ItemPlacementContext ctx) {
-        BlockState state = super.getPlacementState(ctx);
-        Direction side = ctx.getSide();
+    public @Nullable BlockState getStateForPlacement(BlockPlaceContext ctx) {
+        BlockState state = super.getStateForPlacement(ctx);
+        Direction side = ctx.getClickedFace();
         return state
-            .with(HORIZONTAL_FACING, side.getAxis() == Direction.Axis.Y
-                ? ctx.getHorizontalPlayerFacing()
+            .setValue(HORIZONTAL_FACING, side.getAxis() == Direction.Axis.Y
+                ? ctx.getHorizontalDirection()
                 : side
             )
-            .with(BLOCK_FACE, side.getAxis() != Direction.Axis.Y
-                ? BlockFace.WALL
-                : side == Direction.UP ? BlockFace.FLOOR : BlockFace.CEILING
+            .setValue(ATTACH_FACE, side.getAxis() != Direction.Axis.Y
+                ? AttachFace.WALL
+                : side == Direction.UP ? AttachFace.FLOOR : AttachFace.CEILING
             );
     }
 
     @Override
-    public BlockState getStateForNeighborUpdate(BlockState state, Direction direction, BlockState other_state, WorldAccess world, BlockPos pos, BlockPos other_pos) {
-        return getDirection(state).getOpposite() == direction && !state.canPlaceAt(world, pos)
-            ? Blocks.AIR.getDefaultState()
-            : super.getStateForNeighborUpdate(state, direction, other_state, world, pos, other_pos);
+    public BlockState updateShape(BlockState state, Direction direction, BlockState other_state, LevelAccessor world, BlockPos pos, BlockPos other_pos) {
+        return getDirection(state).getOpposite() == direction && !state.canSurvive(world, pos)
+            ? Blocks.AIR.defaultBlockState()
+            : super.updateShape(state, direction, other_state, world, pos, other_pos);
     }
 
     @Override
-    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
-        ActionResult result = super.onUse(state, world, pos, player, hand, hit);
-        if (result.isAccepted()) return result;
+    public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        InteractionResult result = super.use(state, world, pos, player, hand, hit);
+        if (result.consumesAction()) return result;
 
-        if (state.get(POWERED)) return ActionResult.CONSUME;
+        if (state.getValue(POWERED)) return InteractionResult.CONSUME;
         powerOn(state, world, pos);
         playClickSound(player, world, pos, true);
-        world.emitGameEvent(player, GameEvent.BLOCK_ACTIVATE, pos);
+        world.gameEvent(player, GameEvent.BLOCK_ACTIVATE, pos);
 
-        return ActionResult.success(world.isClient);
+        return InteractionResult.sidedSuccess(world.isClientSide);
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public void onExploded(BlockState state, World world, BlockPos pos, Explosion explosion, BiConsumer<ItemStack, BlockPos> stackMerger) {
-        if (explosion.getDestructionType() == Explosion.DestructionType.TRIGGER_BLOCK && !world.isClient() && !(Boolean)state.get(POWERED)) {
+    public void onExplosionHit(BlockState state, Level world, BlockPos pos, Explosion explosion, BiConsumer<ItemStack, BlockPos> stackMerger) {
+        if (explosion.getBlockInteraction() == Explosion.BlockInteraction.TRIGGER_BLOCK && !world.isClientSide() && !(Boolean)state.getValue(POWERED)) {
             powerOn(state, world, pos);
         }
 
-        super.onExploded(state, world, pos, explosion, stackMerger);
+        super.onExplosionHit(state, world, pos, explosion, stackMerger);
     }
 
-    public void powerOn(BlockState state, World world, BlockPos pos) {
-        world.setBlockState(pos, state.with(POWERED, true), 3);
+    public void powerOn(BlockState state, Level world, BlockPos pos) {
+        world.setBlock(pos, state.setValue(POWERED, true), 3);
         updateNeighbors(state, world, pos);
-        world.scheduleBlockTick(pos, this, 30);
+        world.scheduleTick(pos, this, 30);
     }
 
-    protected void playClickSound(@Nullable PlayerEntity player, WorldAccess world, BlockPos pos, boolean powered) {
+    protected void playClickSound(@Nullable Player player, LevelAccessor world, BlockPos pos, boolean powered) {
         world.playSound(
             powered ? player : null,
             pos,
             powered ? BlockSetType.OAK.buttonClickOn() : BlockSetType.OAK.buttonClickOff(),
-            SoundCategory.BLOCKS
+            SoundSource.BLOCKS
         );
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
+    public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
         return BUTTON_VOXELS[
-            (state.get(POWERED) ? 12 : 0) +
-            (4 * state.get(BLOCK_FACE).ordinal()) +
-            state.get(HORIZONTAL_FACING).ordinal() - 2
+            (state.getValue(POWERED) ? 12 : 0) +
+            (4 * state.getValue(ATTACH_FACE).ordinal()) +
+            state.getValue(HORIZONTAL_FACING).ordinal() - 2
         ];
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public BlockState rotate(BlockState state, BlockRotation rotation) {
-        return state.with(HORIZONTAL_FACING, rotation.rotate(state.get(HORIZONTAL_FACING)));
+    public BlockState rotate(BlockState state, Rotation rotation) {
+        return state.setValue(HORIZONTAL_FACING, rotation.rotate(state.getValue(HORIZONTAL_FACING)));
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public BlockState mirror(BlockState state, BlockMirror mirror) {
-        return state.with(HORIZONTAL_FACING, mirror.apply(state.get(HORIZONTAL_FACING)));
+    public BlockState mirror(BlockState state, Mirror mirror) {
+        return state.setValue(HORIZONTAL_FACING, mirror.mirror(state.getValue(HORIZONTAL_FACING)));
     }
 
     @Override
-    public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState new_state, boolean moved) {
-        super.onStateReplaced(state, world, pos, new_state, false);
+    public void onRemove(BlockState state, Level world, BlockPos pos, BlockState new_state, boolean moved) {
+        super.onRemove(state, world, pos, new_state, false);
 
-        if(!state.isOf(new_state.getBlock())) {
-            if (!moved && state.get(POWERED)) updateNeighbors(state, world, pos);
+        if(!state.is(new_state.getBlock())) {
+            if (!moved && state.getValue(POWERED)) updateNeighbors(state, world, pos);
         }
     }
 
     @Override
-    public int getWeakRedstonePower(BlockState state, BlockView view, BlockPos pos, Direction dir) {
-        return state.get(POWERED) ? 15 : super.getWeakRedstonePower(state, view, pos, dir);
+    public int getSignal(BlockState state, BlockGetter view, BlockPos pos, Direction dir) {
+        return state.getValue(POWERED) ? 15 : super.getSignal(state, view, pos, dir);
     }
 
     @Override
-    public int getStrongRedstonePower(BlockState state, BlockView view, BlockPos pos, Direction dir) {
-        return dir == getDirection(state) ? state.getWeakRedstonePower(view, pos, dir) : 0;
+    public int getDirectSignal(BlockState state, BlockGetter view, BlockPos pos, Direction dir) {
+        return dir == getDirection(state) ? state.getSignal(view, pos, dir) : 0;
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public boolean emitsRedstonePower(BlockState state) {
+    public boolean isSignalSource(BlockState state) {
         return true;
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public void scheduledTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
-        if (state.get(POWERED)) tryPowerWithProjectiles(state, world, pos);
+    public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+        if (state.getValue(POWERED)) tryPowerWithProjectiles(state, world, pos);
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public void onEntityCollision(BlockState state, World world, BlockPos pos, Entity entity) {
-        if (!world.isClient && !state.get(POWERED)) tryPowerWithProjectiles(state, world, pos);
+    public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
+        if (!world.isClientSide && !state.getValue(POWERED)) tryPowerWithProjectiles(state, world, pos);
     }
 
-    protected void tryPowerWithProjectiles(BlockState state, World world, BlockPos pos) {
-        PersistentProjectileEntity projectile = world.getNonSpectatingEntities(
-            PersistentProjectileEntity.class,
-            state.getOutlineShape(world, pos).getBoundingBox().offset(pos)
+    protected void tryPowerWithProjectiles(BlockState state, Level world, BlockPos pos) {
+        AbstractArrow projectile = world.getEntitiesOfClass(
+            AbstractArrow.class,
+            state.getShape(world, pos).bounds().move(pos)
         ).stream().findFirst().orElse(null);
         boolean has_projectile = projectile != null;
-        if (has_projectile != state.get(POWERED)) {
-            world.setBlockState(pos, state.with(POWERED, has_projectile), 3);
+        if (has_projectile != state.getValue(POWERED)) {
+            world.setBlock(pos, state.setValue(POWERED, has_projectile), 3);
             this.updateNeighbors(state, world, pos);
             this.playClickSound(null, world, pos, has_projectile);
-            world.emitGameEvent(projectile, has_projectile ? GameEvent.BLOCK_ACTIVATE : GameEvent.BLOCK_DEACTIVATE, pos);
+            world.gameEvent(projectile, has_projectile ? GameEvent.BLOCK_ACTIVATE : GameEvent.BLOCK_DEACTIVATE, pos);
         }
 
         if (has_projectile) {
-            world.scheduleBlockTick(pos, this, 30);
+            world.scheduleTick(pos, this, 30);
         }
 
     }
 
-    private void updateNeighbors(BlockState state, World world, BlockPos pos) {
-        world.updateNeighborsAlways(pos, this);
-        world.updateNeighborsAlways(pos.offset(getDirection(state).getOpposite()), this);
+    private void updateNeighbors(BlockState state, Level world, BlockPos pos) {
+        world.updateNeighborsAt(pos, this);
+        world.updateNeighborsAt(pos.relative(getDirection(state).getOpposite()), this);
     }
 
     protected static Direction getDirection(BlockState state) {
-        return switch (state.get(BLOCK_FACE)) {
+        return switch (state.getValue(ATTACH_FACE)) {
             case CEILING -> Direction.DOWN;
             case FLOOR -> Direction.UP;
-            default -> state.get(HORIZONTAL_FACING);
+            default -> state.getValue(HORIZONTAL_FACING);
         };
     }
 
 
     static {
-        VoxelShape SHAPE = createCuboidShape(5, 0, 6, 11, 2, 10);
-        VoxelShape POWERED_SHAPE = createCuboidShape(5, 0, 6, 11, 1, 10);
+        VoxelShape SHAPE = box(5, 0, 6, 11, 2, 10);
+        VoxelShape POWERED_SHAPE = box(5, 0, 6, 11, 1, 10);
         BUTTON_VOXELS = VoxelHelper.VoxelListBuilder.create(SHAPE, 24)
             .add()
             .add(0, VoxelHelper::rotateY)

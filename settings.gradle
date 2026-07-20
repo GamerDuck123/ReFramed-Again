@@ -5,5 +5,23 @@
             url = 'https://maven.fabricmc.net/'
         }
         gradlePluginPortal()
+        maven {
+            url = "https://maven.kikugie.dev/snapshots"
+            name = "KikuGie Snapshots"
+        }
     }
 }
+
+ plugins {
+     id("dev.kikugie.stonecutter").version "0.9.7"
+ }
+
+ stonecutter {
+     // Enable Groovy DSL, as Stonecutter uses Kotlin by default
+     kotlinController = false
+     centralScript = "build.gradle"
+
+     create(rootProject) {
+         versions("1.20.4")
+     }
+ }

@@ -1,33 +1,11 @@
-import fr.altarik.ReportDiscord
-import fr.altarik.CreateTag
-
-
 plugins {
 	id "com.modrinth.minotaur" version "2.+"
 	id 'fabric-loom' version "1.17-SNAPSHOT"
 	id 'maven-publish'
 }
 
-
-Properties local = new Properties()
-try {
-	local.load(new FileInputStream(rootProject.file("local.properties")))
-} catch (IOException ignored) {}
-
 version = project.mod_version
 group = project.maven_group
-
-
-String webhookId = getEnv("DISCORD_PUB_ID", local.getProperty("discord_pub_id"))
-String webhookToken = getEnv("DISCORD_PUB_TOKEN", local.getProperty("discord_pub_token"))
-String repoUrl = "https://repo.altarik.fr/#/" + (project.version.endsWith('SNAPSHOT') ? 'snapshots/' : 'releases/') + project.group.replace(".", "/") + "/" + project.rootProject.name + "/" + project.version
-
-var reportConfig = new ReportDiscord.ReportData("https://discord.com/api/", webhookId, webhookToken, project.rootProject.name, "Update " + project.version + " has been published", repoUrl)
-
-String giteaToken = getEnv("GITEA_TOKEN", local.getProperty("gitea_token"))
-
-var releaseConfig = new CreateTag.CreateReleaseData("https://git.altarik.fr", project.git_owner, project.git_repo, "v" + project.version as String, giteaToken)
-
 
 base {
 	archivesName = project.archives_base_name
@@ -45,7 +23,6 @@ sourceSets {
 
 loom {
 	runs {
-		// This adds a new gradle task that runs the datagen API: "gradlew runDatagen"
 		datagen {
 			inherit server
 			name "Data Generation"
@@ -59,14 +36,6 @@ loom {
 }
 
 repositories {
-	maven {
-		name 'altarik-snapshots'
-		url 'https://repo.altarik.fr/snapshots/'
-	}
-	maven {
-		name 'altarik-releases'
-		url 'https://repo.altarik.fr/releases/'
-	}
 	maven {
 		url "https://maven.teamresourceful.com/repository/maven-public/"
 	}
@@ -88,12 +57,6 @@ repositories {
         url = "https://jitpack.io"
     }
 	mavenCentral()
-
-	// Add repositories to retrieve artifacts from in here.
-	// You should only use this when depending on other mods because
-	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
-	// for more information about repositories.
 }
 
 dependencies {
@@ -106,8 +69,6 @@ dependencies {
 	// Indium and sodium for sodium support
 	modCompileOnly "maven.modrinth:indium:${project.property("mod.dependency.indium_version")}+mc${sc.current.version}"
 	modCompileOnly "maven.modrinth:sodium:mc${sc.current.version}-${project.property("mod.dependency.sodium_version")}"
-//	modRuntimeOnly "maven.modrinth:indium:${project.indium_version}+mc${project.minecraft_version}"
-//	modRuntimeOnly "maven.modrinth:sodium:mc${project.minecraft_version}-${project.sodium_version}"
 
 	// Athena for connected textures
 	modCompileOnly "earth.terrarium.athena:athena-fabric-${sc.current.version}:${project.property("mod.dependency.athena_version")}"
@@ -185,25 +146,12 @@ publishing {
 		}
 	}
 
-	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
 	repositories {
-		// Add repositories to publish to here.
-		// Notice: This block does NOT have the same function as the block in the top level.
-		// The repositories here will be used for publishing your artifact, not for
-		// retrieving dependencies.
-		maven {
-			name 'altarik'
-			url 'https://repo.altarik.fr/'.concat(project.version.endsWith('SNAPSHOT') ? 'snapshots/' : 'releases/')
-			credentials {
-				username = getEnv("REPO_USERNAME", local.getProperty("repo_username"))
-				password = getEnv("REPO_PASSWORD", local.getProperty("repo_password"))
-			}
-		}
 
 	}
 }
 
-// configure modrinth publication
+// need to update to the new modrinth
 //modrinth {
 //	token = getEnv("MODRINTH_TOKEN", local.getProperty("modrinth_token"))
 //	projectId = project.modrinth_id
@@ -221,13 +169,6 @@ publishing {
 //	}
 //}
 
-//tasks.register("reportToDiscord", ReportDiscord) {
-//	config.set(reportConfig)
-//}
-
-//tasks.register("createTag", CreateTag) {
-//	config.set(releaseConfig)
-//}
 
 static def getEnv(String envName, String defaultValue) {
 	String r = System.getenv(envName)

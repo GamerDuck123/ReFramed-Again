@@ -2,10 +2,11 @@
 	"schemaVersion": 1,
 	"id": "${mod_id}",
 	"version": "${version}",
-	"name": "ReFramed",
-	"description": "A remake of forge framed blocks",
+	"name": "ReFramedAgain",
+	"description": "An updated fork of reframed blocks",
 	"authors": [
-		"Adrien1106"
+		"Adrien1106",
+		"GamerDuck123"
 	],
 	"contact": {},
 	"license": "MIT AND LGPL-3.0",
@@ -23,7 +24,7 @@
 		]
 	},
 	"mixins": [
-		"reframed.mixins.json"
+		"reframedagain.mixins.json"
 	],
 	"depends": {
 		"minecraft": "${minecraft_version}",

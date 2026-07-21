@@ -6,7 +6,6 @@ import fr.adrien1106.reframed.util.blocks.ThemeableBlockEntity;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.pipeline.FluidRenderer;
 import me.jellysquid.mods.sodium.client.world.WorldSlice;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
-import net.minecraft.block.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.AirBlock;
@@ -28,7 +27,7 @@ public abstract class SodiumFluidRendererMixin {
         method = "isSideExposed",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/world/level/block/state/BlockState;isOpaque()Z"
+            target = "Lnet/minecraft/world/level/block/state/BlockState;canOcclude()Z"
         )
     )
     private boolean isSideOpaqueExposed(BlockState state) {
@@ -40,7 +39,7 @@ public abstract class SodiumFluidRendererMixin {
         method = "isSideExposed",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/world/level/block/state/BlockState;getCullingShape(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/phys/shapes/VoxelShape;"
+            target = "Lnet/minecraft/world/level/block/state/BlockState;getOcclusionShape(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/phys/shapes/VoxelShape;"
         )
     )
     private VoxelShape isSideShapeExposed(BlockState state, BlockGetter world, BlockPos pos) {

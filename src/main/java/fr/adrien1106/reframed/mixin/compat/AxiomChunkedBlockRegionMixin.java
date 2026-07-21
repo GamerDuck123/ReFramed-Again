@@ -70,36 +70,36 @@ public abstract class AxiomChunkedBlockRegionMixin implements IAxiomChunkedBlock
             return List.of();
     }
 
-    @Inject(
-        method = "renderBlock",
-        at = @At(
-            value = "INVOKE_ASSIGN",
-            target = "Lnet/minecraft/client/renderer/block/BlockRenderDispatcher;getBlockModel(Lnet/minecraft/world/level/block/state/BlockState;)Lnet/minecraft/client/resources/model/BakedModel;",
-            shift = At.Shift.AFTER
-        ),
-        cancellable = true)
-    private static void onRenderBlock(BufferBuilder blockBuilder, BlockRenderDispatcher renderer, BlockPos.MutableBlockPos pos, RandomSource rand, PoseStack matrices, BlockAndTintGetter world, Matrix4f currentPoseMatrix, Matrix4f basePoseMatrix, int x, int y, int z, BlockState state, boolean useAmbientOcclusion, CallbackInfo ci, @Local BakedModel model) {
-        List<BakedModel> models;
-        if ((models = getModels(model, state)).isEmpty()) return;
-
-        DefaultList<BlockState> themes = new DefaultList<>(
-            Blocks.AIR.defaultBlockState(),
-            world.getBlockEntity(pos) instanceof ThemedBlockEntity themed
-                ? themed.getThemes()
-                : List.of()
-        );
-        models.stream().flatMap(m -> m instanceof MultiRetexturableModel mm
-            ? mm.models().stream()
-            : Stream.of((RetexturingBakedModel)m)
-        ).forEach(m -> {
-            m.setCamo(world, themes.get(m.getThemeIndex() - 1), pos);
-            if (useAmbientOcclusion && state.getLightEmission() == 0 && m.useAmbientOcclusion()) renderer.getModelRenderer()
-                    .tesselateWithAO(world, m, state, pos, matrices, blockBuilder, true, rand, state.getSeed(pos), OverlayTexture.NO_OVERLAY);
-            else renderer.getModelRenderer()
-                    .tesselateWithoutAO(world, m, state, pos, matrices, blockBuilder, true, rand, state.getSeed(pos), OverlayTexture.NO_OVERLAY);
-        });
-        ci.cancel();
-    }
+//    @Inject(
+//        method = "render",
+//        at = @At(
+//            value = "INVOKE_ASSIGN",
+//            target = "Lnet/minecraft/client/renderer/block/BlockRenderDispatcher;getBlockModel(Lnet/minecraft/world/level/block/state/BlockState;)Lnet/minecraft/client/resources/model/BakedModel;",
+//            shift = At.Shift.AFTER
+//        ),
+//        cancellable = true)
+//    private static void onRenderBlock(BufferBuilder blockBuilder, BlockRenderDispatcher renderer, BlockPos.MutableBlockPos pos, RandomSource rand, PoseStack matrices, BlockAndTintGetter world, Matrix4f currentPoseMatrix, Matrix4f basePoseMatrix, int x, int y, int z, BlockState state, boolean useAmbientOcclusion, CallbackInfo ci, @Local BakedModel model) {
+//        List<BakedModel> models;
+//        if ((models = getModels(model, state)).isEmpty()) return;
+//
+//        DefaultList<BlockState> themes = new DefaultList<>(
+//            Blocks.AIR.defaultBlockState(),
+//            world.getBlockEntity(pos) instanceof ThemedBlockEntity themed
+//                ? themed.getThemes()
+//                : List.of()
+//        );
+//        models.stream().flatMap(m -> m instanceof MultiRetexturableModel mm
+//            ? mm.models().stream()
+//            : Stream.of((RetexturingBakedModel)m)
+//        ).forEach(m -> {
+//            m.setCamo(world, themes.get(m.getThemeIndex() - 1), pos);
+//            if (useAmbientOcclusion && state.getLightEmission() == 0 && m.useAmbientOcclusion()) renderer.getModelRenderer()
+//                    .tesselateWithAO(world, m, state, pos, matrices, blockBuilder, true, rand, state.getSeed(pos), OverlayTexture.NO_OVERLAY);
+//            else renderer.getModelRenderer()
+//                    .tesselateWithoutAO(world, m, state, pos, matrices, blockBuilder, true, rand, state.getSeed(pos), OverlayTexture.NO_OVERLAY);
+//        });
+//        ci.cancel();
+//    }
 
     @Inject(
         method = "getBlockEntity",

@@ -8,6 +8,10 @@ import net.fabricmc.fabric.api.renderer.v1.material.RenderMaterial;
 import net.fabricmc.fabric.api.renderer.v1.mesh.Mesh;
 import net.fabricmc.fabric.api.renderer.v1.mesh.MeshBuilder;
 import net.fabricmc.fabric.api.renderer.v1.mesh.QuadEmitter;
+import net.fabricmc.fabric.mixin.client.rendering.AtlasSourceManagerAccessor;
+import net.minecraft.client.gui.screens.inventory.CraftingScreen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.renderer.block.model.BakedQuad;
@@ -36,8 +40,8 @@ public class UnbakedJsonRetexturedModel extends UnbakedRetexturedModel {
 
 		TextureAtlasSprite[] sprites = new TextureAtlasSprite[directions.length];
 		for(int i = 0; i < directions.length; i++) {
-			SpriteIdentifier id = new SpriteIdentifier(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE, ReFramed.id("reframed_special/" + directions[i].getName()));
-			sprites[i] = Objects.requireNonNull(spriteLookup.apply(id), () -> "Couldn't find sprite " + id + " !");
+//			Material id = new Material(InventoryScreen.BLOCK_ATLAS_TEXTURE, ReFramed.id("reframed_special/" + directions[i].getName()));
+//			sprites[i] = Objects.requireNonNull(spriteLookup.apply(id), () -> "Couldn't find sprite " + id + " !");
 		}
 
 		return new RetexturingBakedModel(
@@ -53,7 +57,7 @@ public class UnbakedJsonRetexturedModel extends UnbakedRetexturedModel {
 				QuadEmitter emitter = builder.getEmitter();
 				RenderMaterial mat = appearance_manager.getCachedMaterial(state, false);
 				
-				Random rand = Random.create(42);
+				RandomSource rand = RandomSource.create(42);
 
 				for(Direction cullFace : DIRECTIONS_AND_NULL) {
 					for(BakedQuad quad : wrapped.getQuads(state, cullFace, rand)) {

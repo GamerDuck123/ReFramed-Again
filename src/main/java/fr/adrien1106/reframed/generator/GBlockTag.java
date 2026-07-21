@@ -29,10 +29,10 @@ public class GBlockTag extends BlockTagProvider {
 
     @Override
     protected void addTags(Provider arg) {
-        FabricTagBuilder builder = tag(BlockTags.MINEABLE_WITH_AXE);
+        FabricTagBuilder builder = getOrCreateTagBuilder(BlockTags.MINEABLE_WITH_AXE);
         ReFramed.BLOCKS.forEach((block) -> {
             if (providers.containsKey(block.getClass()))
-                providers.get(block.getClass()).getTags().forEach((tag) -> tag(tag).add(block));
+                providers.get(block.getClass()).getTags().forEach((tag) -> getOrCreateTagBuilder(tag).add(block));
             builder.add(block);
         });
     }

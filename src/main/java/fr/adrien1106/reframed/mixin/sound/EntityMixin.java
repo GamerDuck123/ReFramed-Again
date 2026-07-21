@@ -23,7 +23,7 @@ public abstract class EntityMixin {
         method = "playStepSound",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/world/level/block/state/BlockState;getSoundGroup()Lnet/minecraft/world/level/block/SoundType;"
+            target = "Lnet/minecraft/world/level/block/state/BlockState;getSoundType()Lnet/minecraft/world/level/block/SoundType;"
         )
     )
     private SoundType playStepCamoSound(BlockState state, @Local(argsOnly = true) BlockPos pos) {

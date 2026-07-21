@@ -37,7 +37,7 @@ public abstract class LayeredReFramedBlock extends WaterloggableReFramedBlock {
     }
 
     @Override
-    protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder builder) {
+    protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder.add(LAYERS));
     }
 

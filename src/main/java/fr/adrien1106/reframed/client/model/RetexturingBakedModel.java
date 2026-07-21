@@ -16,6 +16,7 @@ import net.fabricmc.fabric.api.renderer.v1.mesh.*;
 import net.fabricmc.fabric.api.renderer.v1.model.ForwardingBakedModel;
 import net.fabricmc.fabric.api.renderer.v1.model.ModelHelper;
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
+import net.fabricmc.fabric.mixin.networking.client.accessor.MinecraftClientAccessor;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.client.Minecraft;
@@ -147,7 +148,7 @@ public abstract class RetexturingBakedModel extends ForwardingBakedModel {
 		int model_id = 0;
 		if (camo instanceof WeightedComputedAppearance wca) model_id = wca.getAppearanceIndex(seed);
 
-		int tint = 0xFF000000 | MinecraftClient.getInstance().getBlockColors().getColor(theme, world, pos, 0);
+		int tint = 0xFF000000 | Minecraft.getInstance().getBlockColors().getColor(theme, world, pos, 0);
 		MeshCacheKey key = new MeshCacheKey(hashCode(), camo, model_id);
 		// do not clutter the cache with single-use meshes
 		Mesh untintedMesh = camo.hashCode() == -1 ? transformMesh(key, state) : getRetexturedMesh(key, state);
@@ -172,7 +173,7 @@ public abstract class RetexturingBakedModel extends ForwardingBakedModel {
 		BlockState theme = ReFramedEntity.readStateFromItem(stack, theme_index);
 		if(!theme.isAir()) {
 			appearance = appearance_manager.getCamoAppearance(null, theme, null, theme_index, true);
-			tint = 0xFF000000 | MinecraftClient.getInstance().getItemColors().getColor(new ItemStack(theme.getBlock()), 0);
+			tint = 0xFF000000 | ((MinecraftAccessor) Minecraft.getInstance()).getItemColors().getColor(new ItemStack(theme.getBlock()), 0);
 		} else {
 			appearance = appearance_manager.getDefaultAppearance(theme_index);
 			tint = 0xFFFFFFFF;

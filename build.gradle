@@ -20,7 +20,9 @@ if (pluginId != null) {
 base {
 	archivesName = project.archives_base_name
 }
-
+fabricApi {
+	configureDataGeneration()
+}
 sourceSets {
 	main {
 		resources {

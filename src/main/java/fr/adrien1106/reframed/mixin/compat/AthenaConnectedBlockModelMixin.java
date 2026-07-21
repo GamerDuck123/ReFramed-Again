@@ -15,11 +15,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public class AthenaConnectedBlockModelMixin {
 
     @Redirect(method = "getQuads",
-        at = @At(value = "INVOKE", target = "Learth/terrarium/athena/api/client/utils/CtmUtils;" +
-            "checkRelative(Learth/terrarium/athena/api/client/utils/AppearanceAndTintGetter;" +
-            "Lnet/minecraft/block/BlockState;" +
-            "Lnet/minecraft/util/math/BlockPos;" +
-            "Lnet/minecraft/util/math/Direction;)Z"))
+        at = @At(value = "INVOKE", target = "Learth/terrarium/athena/api/client/utils/CtmUtils;checkRelative(Learth/terrarium/athena/api/client/utils/AppearanceAndTintGetter;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/Direction;)Z"))
     private boolean checkForCull(AppearanceAndTintGetter level, BlockState state, BlockPos pos, Direction direction) {
         // Always get all the textures unless its another block then use default behaviour
         if (level.getBlockEntity(pos) instanceof ThemeableBlockEntity

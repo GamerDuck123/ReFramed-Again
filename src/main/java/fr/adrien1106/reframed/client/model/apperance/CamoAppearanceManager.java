@@ -218,8 +218,12 @@ public class CamoAppearanceManager {
 	}
 
 	private static boolean[][] getOrderMatrix(QuadEmitter emitter, TextureAtlasSprite sprite) {
-		float u_center = (sprite.getMinU() + sprite.getMaxU()) / 2;
-		float v_center = (sprite.getMinV() + sprite.getMaxV()) / 2;
+		float minU = Math.min(sprite.getU0(), sprite.getU1());
+		float maxU = Math.max(sprite.getU0(), sprite.getU1());
+		float minV = Math.min(sprite.getV0(), sprite.getV1());
+		float maxV = Math.max(sprite.getV0(), sprite.getV1());
+		float u_center = (minU + maxU) / 2;
+		float v_center = (minV + maxV) / 2;
 		boolean[][] order_matrix = new boolean[4][2];
 		for (int i = 0; i < 4; i++) {
 			order_matrix[i][0] = emitter.u(i) < u_center;

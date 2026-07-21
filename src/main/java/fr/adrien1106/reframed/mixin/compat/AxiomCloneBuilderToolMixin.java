@@ -32,7 +32,7 @@ public class AxiomCloneBuilderToolMixin {
         ),
         remap = false
     )
-    private void onInitiateClone(int copyId, int offsetX, int offsetY, int offsetZ, SelectionBuffer.CopyResult copyResult, CallbackInfo ci) {
+    private void onInitiateClone(int copyId, SelectionBuffer selection, int offsetX, int offsetY, int offsetZ, SelectionBuffer.CopyResult copyResult, CallbackInfo ci) {
         ((IAxiomChunkedBlockRegionMixin) blockRegion).setTransform(transformMatrix, blockEntities);
     }
 }

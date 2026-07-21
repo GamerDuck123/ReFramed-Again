@@ -24,12 +24,7 @@ public class LevelRendererMixin {
     @Shadow @Final private Minecraft minecraft;
 
     @Redirect(method = "renderHitOutline",
-        at = @At(value = "INVOKE", target = "Lnet/minecraft/block/BlockState;" +
-            "getOutlineShape(" +
-                "Lnet/minecraft/world/BlockView;" +
-                "Lnet/minecraft/util/math/BlockPos;" +
-                "Lnet/minecraft/block/ShapeContext;" +
-            ")Lnet/minecraft/util/shape/VoxelShape;"))
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/BlockState;getShape(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/phys/shapes/CollisionContext;)Lnet/minecraft/world/phys/shapes/VoxelShape;"))
     private VoxelShape getRenderOutline(BlockState state, BlockGetter world, BlockPos pos, CollisionContext shape_context) {
         if (state.getBlock() instanceof ReFramedDoubleBlock double_frame_block) // cast is already checked in render
             return double_frame_block.getRenderOutline(state, (BlockHitResult) minecraft.hitResult);

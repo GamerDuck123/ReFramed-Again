@@ -24,7 +24,7 @@ public class AxiomMoveBuilderToolMixin {
     @Shadow(remap = false) private Long2ObjectMap<CompressedBlockEntity> blockEntities;
 
     @Inject(
-        method = "lambda$initiateMovement$1",
+        method = "initiateMovement",
         at = @At(
             value = "INVOKE_ASSIGN",
             target = "Lcom/moulberry/axiom/clipboard/SelectionBuffer$CopyResult;blockEntities()Lit/unimi/dsi/fastutil/longs/Long2ObjectMap;",
@@ -32,7 +32,7 @@ public class AxiomMoveBuilderToolMixin {
         ),
         remap = false
     )
-    private void onInitiateClone(int copyId, int offsetX, int offsetY, int offsetZ, SelectionBuffer.CopyResult copyResult, CallbackInfo ci) {
+    private void onInitiateClone(CallbackInfo ci) {
         ((IAxiomChunkedBlockRegionMixin) blockRegion).setTransform(transformMatrix, blockEntities);
     }
 }

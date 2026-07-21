@@ -7,12 +7,15 @@ import com.moulberry.axiom.world_modification.CompressedBlockEntity;
 import fr.adrien1106.reframed.util.mixin.IAxiomChunkedBlockRegionMixin;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+import java.util.List;
 
 @Mixin(Placement.class)
 public class AxiomPlacementMixin {
@@ -32,10 +35,10 @@ public class AxiomPlacementMixin {
 // TODO(Ravel): target method startPlacement with the signature not found
 // TODO(Ravel): target method startPlacement with the signature not found
     @Inject(
-        method = "startPlacement(Lnet/minecraft/util/math/BlockPos;Lcom/moulberry/axiom/render/regions/ChunkedBlockRegion;Lit/unimi/dsi/fastutil/longs/Long2ObjectMap;Ljava/lang/String;)I",
+        method = "startPlacement(Lnet/minecraft/core/BlockPos;Lcom/moulberry/axiom/render/regions/ChunkedBlockRegion;Lit/unimi/dsi/fastutil/longs/Long2ObjectMap;Ljava/util/List;ZLjava/lang/String;)I",
         at = @At("HEAD")
     )
-    private void onStartPlacement(BlockPos target, ChunkedBlockRegion region, Long2ObjectMap<CompressedBlockEntity> entities, String description, CallbackInfoReturnable<Integer> cir) {
-        ((IAxiomChunkedBlockRegionMixin) region).setTransform(new IntMatrix(), entities);
+    private void onStartPlacement(BlockPos target, ChunkedBlockRegion blockRegion, Long2ObjectMap<CompressedBlockEntity> blockEntities, List<CompoundTag> entities, boolean containsAir, String placementDescription, CallbackInfoReturnable<Integer> cir) {
+        ((IAxiomChunkedBlockRegionMixin) blockRegion).setTransform(new IntMatrix(), blockEntities);
     }
 }

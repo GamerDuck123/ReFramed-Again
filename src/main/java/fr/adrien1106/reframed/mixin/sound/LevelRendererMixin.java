@@ -24,7 +24,7 @@ public class LevelRendererMixin {
         method = "levelEvent",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/world/level/block/state/BlockState;getSoundGroup()Lnet/minecraft/world/level/block/SoundType;"
+            target = "Lnet/minecraft/world/level/block/state/BlockState;getSoundType()Lnet/minecraft/world/level/block/SoundType;"
         )
     )
     private SoundType getCamoBreakSound(BlockState state, @Local(argsOnly = true) BlockPos pos) {

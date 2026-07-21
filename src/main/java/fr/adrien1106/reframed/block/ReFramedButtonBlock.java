@@ -1,7 +1,6 @@
 package fr.adrien1106.reframed.block;
 
 import fr.adrien1106.reframed.util.VoxelHelper;
-import net.minecraft.block.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour.Properties;

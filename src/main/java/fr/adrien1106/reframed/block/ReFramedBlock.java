@@ -3,7 +3,6 @@ package fr.adrien1106.reframed.block;
 import fr.adrien1106.reframed.ReFramed;
 import fr.adrien1106.reframed.util.blocks.BlockHelper;
 import fr.adrien1106.reframed.util.blocks.ThemeableBlockEntity;
-import net.minecraft.block.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EntityBlock;

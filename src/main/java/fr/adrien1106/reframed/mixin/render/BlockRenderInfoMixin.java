@@ -31,15 +31,14 @@ public abstract class BlockRenderInfoMixin implements IBlockRenderInfoMixin {
     @Unique private int model_hash = 0;
 
     @ModifyArg(method = "prepareForBlock",
-        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/RenderLayers;" +
-            "getBlockLayer(Lnet/minecraft/block/BlockState;)Lnet/minecraft/client/render/RenderLayer;"))
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/ItemBlockRenderTypes;getChunkRenderType(Lnet/minecraft/world/level/block/state/BlockState;)Lnet/minecraft/client/renderer/RenderType;"))
     public BlockState prepareCamoLayer(BlockState state, @Local(argsOnly = true) BlockPos pos) {
         BlockEntity block_entity = blockView.getBlockEntity(pos);
         if (!(block_entity instanceof ThemeableBlockEntity frame_entity)) return state;
         return frame_entity.getTheme(theme_index);
     }
 
-    @Redirect(method = "shouldDrawFace", at = @At(value = "INVOKE", target = "Lnet/minecraft/block/Block;shouldDrawSide(Lnet/minecraft/block/BlockState;Lnet/minecraft/world/BlockView;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/util/math/Direction;Lnet/minecraft/util/math/BlockPos;)Z"))
+    @Redirect(method = "shouldDrawFace", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/Block;shouldRenderFace(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/Direction;Lnet/minecraft/core/BlockPos;)Z"))
     private boolean shouldDrawAdjacentCamoSide(BlockState state, BlockGetter world, BlockPos pos, Direction side, BlockPos other_pos) {
         return RenderHelper.shouldDrawSide(state, world, pos, side, other_pos, theme_index);
     }
